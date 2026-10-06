@@ -225,3 +225,106 @@ const CONCEPT_PREREQ = {
  mtp: ["spec"], dflash: ["spec","mtp"], marlin: ["gemv","spec"], l2: ["gemv"],
  draftvocab: ["spec","mtp"], verify: ["spec","gdn","launch"], gate: [], measure: [],
 };
+
+/* ============ 参考资料：每门概念课的延伸阅读（论文/文档直链 + B 站搜索入口） ============ */
+/* bli() 生成 B 站搜索入口：点开即结果页；标注的标题是搜索核实过存在的视频 */
+const bli = kw => "https://search.bilibili.com/all?keyword=" + encodeURIComponent(kw);
+const ARX = "https://arxiv.org/abs/";
+
+const CONCEPT_REFS = {
+wall: [
+ ["Roofline: An Insightful Visual Performance Model（论文，CACM 2009）", "https://doi.org/10.1145/1490176.1490184", "屋顶线模型的原始论文——“计算 vs 带宽谁先到顶”的框架就来自这里"],
+ ["NVIDIA CUDA C++ Programming Guide（官方手册）", "https://docs.nvidia.com/cuda/cuda-c-programming-guide/", "显存层级与带宽章节；工程侧的权威口径"],
+ ["B 站搜索：LLM 推理 显存带宽 / Roofline", bli("大模型推理 显存带宽 roofline"), "找“LLM 推理为什么受限于内存带宽”类的中文讲解"],
+],
+bytes: [
+ ["Transformer Inference Arithmetic（kipply 博客）", "https://kipp.ly/blog/transformer-inference-arithmetic/", "把“每 token 读多少字节”从 KV 到权重全部算一遍的经典文章，与本课同一套账"],
+ ["B 站搜索：KV Cache 显存计算", bli("KV Cache 显存计算"), "中文的 KV 字节账演算视频很多，选播放高的看"],
+],
+quant: [
+ ["GPTQ: Accurate Post-Training Quantization（论文）", ARX+"2210.17323", "本项目用的量化算法原始论文"],
+ ["AWQ: Activation-aware Weight Quantization（论文）", ARX+"2306.00978", "另一条主线量化路线，第 30 步质量表里的对手 RedHatAI INT4 用的就是它"],
+ ["HuggingFace Transformers 量化文档", "https://huggingface.co/docs/transformers/quantization", "GPTQ/AWQ/bitsandbytes 的官方使用说明"],
+ ["llama.cpp（仓库，含各级量化格式文档）", "https://github.com/ggml-org/llama.cpp", "README 与 docs 里的量化格式表（Q4_K_M 等的含义）"],
+ ["B 站：《大模型量化一网打尽》系列（核实存在，含 GPTQ 源码一集）", bli("大模型量化一网打尽"), "从量化基础到 GPTQ 源码的中文系列课"],
+ ["B 站搜索：GPTQ 原理解析", bli("GPTQ 原理解析"), "多支图解类视频可选"],
+],
+gemv: [
+ ["CUTLASS（NVIDIA 官方 GPU 矩阵库，含文档）", "https://github.com/NVIDIA/cutlass", "读它的文档理解 tile/GEMM 的机器模型"],
+ ["B 站搜索：Tensor Core 原理", bli("tensor core 原理"), "张量核心的乘法矩阵单元图解"],
+ ["B 站搜索：GEMV GEMM 区别", bli("GEMV GEMM 区别"), "基础概念补课"],
+],
+launch: [
+ ["CUDA Graphs（NVIDIA 官方博客）", "https://developer.nvidia.com/blog/cuda-graphs/", "官方的动机解释与 API 教程"],
+ ["Accelerating PyTorch with CUDA Graphs（PyTorch 官方博客）", "https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/", "reduce-overhead 模式背后就是这套机制"],
+ ["B 站搜索：CUDA Graph 详解", bli("CUDA Graph 详解"), "中文图解视频"],
+],
+fusion: [
+ ["Triton 官方教程", "https://triton-lang.org/main/getting-started/tutorials/", "亲手写融合 kernel 的起点——本项目所有自写 kernel 的语言"],
+ ["B 站搜索：Triton 入门 教程", bli("triton 入门 教程"), "中文 Triton 课程"],
+],
+kv: [
+ ["Efficient Memory Management for LLM Serving（vLLM/PagedAttention 论文）", ARX+"2309.06180", "KV 缓存管理的高引用论文；服务器世界的答案（分页）与单流世界的答案（压精度）正好互补"],
+ ["vLLM 团队博客：Efficient Memory Management for LLM Serving", "https://blog.vllm.ai/2023/06/20/vllm.html", "PagedAttention 的图解版博客"],
+ ["B 站：《怎么加快大模型推理？10分钟学懂vLLM内部原理，KV Cache》（核实存在，14 万+播放）", bli("vLLM KV Cache 内部原理"), "KV Cache + vLLM 的中文速览"],
+ ["B 站搜索：KV Cache 图解", bli("KV Cache 图解"), "图解类视频"],
+],
+flashdec: [
+ ["FlashAttention: Fast and Memory-Efficient Exact Attention（论文）", ARX+"2205.14135", "分块 + 在线 softmax 的原始出处"],
+ ["FlashAttention-2（论文）", ARX+"2307.08691", "更快版本，decode 场景的并行度讨论"],
+ ["FlashDecoding++（论文）", ARX+"2311.01282", "专门讲 decode 阶段的 split 并行"],
+ ["flash-attention（官方仓库）", "https://github.com/Dao-AILab/flash-attention", "代码与 benchmark"],
+ ["B 站：《论文分享：从Online Softmax到FlashAttention-2》（核实存在，高校组会讲解）", bli("从Online Softmax到FlashAttention"), "从在线 softmax 推起的完整推导课"],
+ ["知乎：图解大模型计算加速方法 FlashAttention（猛猿）", "https://zhuanlan.zhihu.com/p/669526499", "中文图解长文，配 B 站视频食用更佳"],
+],
+gdn: [
+ ["Mamba: Linear-Time Sequence Modeling（论文）", ARX+"2312.00752", "固定大小状态递归层的代表作（选择性 SSM）"],
+ ["Gated Delta Networks（论文）", ARX+"2412.06464", "本模型 GDN 层的直接出处"],
+ ["flash-linear-attention（官方仓库，本项目的依赖）", "https://github.com/fla-org/flash-linear-attention", "线性注意力家族的 kernel 库"],
+ ["B 站搜索：线性注意力 讲解 / Mamba 讲解", bli("线性注意力 mamba 讲解"), "中文概念课"],
+],
+spec: [
+ ["Fast Inference from Transformers via Speculative Decoding（Leviathan et al.）", ARX+"2211.17192", "投机解码的原始论文之一（Google）"],
+ ["Accelerating Large Language Model Decoding with Speculative Sampling（Chen et al.）", ARX+"2302.01318", "另一篇原始论文（DeepMind），拒绝采样形式更完整"],
+ ["EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty（论文）", ARX+"2401.15077", "草稿模型设计的代表作"],
+ ["B 站搜索：投机解码 / speculative decoding 中文", bli("投机解码 speculative decoding"), "中文讲解视频"],
+ ["B 站搜索：MTP 多 token 预测", bli("MTP 多token预测 deepseek"), "DeepSeek-V3 的 MTP 与投机解码的关系"],
+],
+mtp: [
+ ["DeepSeek-V3 Technical Report（论文，MTP 章节）", ARX+"2412.19437", "把 MTP 头作为推理草稿的工程出处"],
+ ["vLLM Speculators 文档", "https://docs.vllm.ai/projects/speculators/en/latest/", "MTP/DFlash 等草稿的工业实现文档"],
+],
+dflash: [
+ ["DFlash 论文", ARX+"2602.06036", "块扩散草稿的原始论文（作者日志里也引用了它）"],
+ ["z-lab/dflash（官方仓库）", "https://github.com/z-lab/dflash", "参考实现"],
+ ["NVIDIA 博客：Boosting Inference with DFlash Speculative Decoding", "https://developer.nvidia.com/blog/boost-inference-performance-up-to-15x-on-nvidia-blackwell-using-dflash-speculative-decoding/", "官方性能视角"],
+ ["DFlash & DSpark 写作", "https://jianyuh.github.io/llm/inference/speculative%20decoding/2026/06/29/DFlash-DSpark-Diffusion-Speculative-Decoding.html", "作者日志引用的第三方解析"],
+ ["B 站搜索：扩散模型 语言生成", bli("扩散模型 文本生成 讲解"), "理解“块扩散”需要一点扩散模型背景"],
+],
+marlin: [
+ ["IST-DASLab/marlin（官方仓库）", "https://github.com/IST-DASLab/marlin", "822 行 CUDA 原版；本项目移植的母本"],
+ ["AutoAWQ + Marlin 话题（Emergent Mind）", "https://www.emergentmind.com/topics/autoawq-marlin", "作者日志引用的背景资料"],
+ ["B 站搜索：Marlin int4 kernel", bli("marlin int4 推理 kernel"), "相关中文资料较少，读仓库 README 是正路"],
+],
+l2: [
+ ["NVIDIA CUDA C++ Programming Guide：缓存层级", "https://docs.nvidia.com/cuda/cuda-c-programming-guide/", "L1/L2/显存的官方描述"],
+ ["B 站搜索：GPU 缓存结构", bli("GPU 缓存结构 L2"), "体系结构补课"],
+],
+draftvocab: [
+ ["prompt-lookup-decoding（仓库）", "https://github.com/apoorvumang/prompt-lookup-decoding", "另一条“便宜草稿”路线：从提示里 n-gram 抄"],
+],
+verify: [
+ ["Leviathan et al. 2022（同投机解码）", ARX+"2211.17192", "验证与接受的数学就在这两篇里"],
+ ["本仓库 tokenrush/spec.py 与 tests/test_spec.py", "https://github.com/SeddonShen/token-rush/blob/a800/tokenrush/spec.py", "读真实实现：设备端接受/提交的完整写法"],
+],
+gate: [
+ ["HuggingFace Transformers 文档", "https://huggingface.co/docs/transformers/index", "参考实现的出处（对拍的地基）"],
+ ["本仓库 tests/（65+ 个差分测试）", "https://github.com/SeddonShen/token-rush/tree/a800/tests", "现成的测试范式样例"],
+ ["B 站搜索：差分测试", bli("差分测试"), "通用软件工程概念补课"],
+],
+measure: [
+ ["本仓库 docs/progress.md（作者的完整日志）", "https://github.com/SeddonShen/token-rush/blob/a800/docs/progress.md", "“先测量后动工”的 35 个现场案例"],
+ ["本仓库 docs/baselines.md", "https://github.com/SeddonShen/token-rush/blob/a800/docs/baselines.md", "对手怎么跑、口径怎么对齐的完整记录"],
+ ["B 站搜索：LLM 推理 benchmark 方法", bli("LLM 推理 benchmark"), "测量的常见坑"],
+],
+};
