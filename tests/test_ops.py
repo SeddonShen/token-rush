@@ -244,9 +244,12 @@ def test_engine_prefill_chunks_and_decode_agree(quant):
     assert rel(chunked, full) < 0.05, rel(chunked, full)
     assert rel(stepped, full[4:]) < 0.05, rel(stepped, full[4:])
     row = ((chunked - full).norm(dim=-1) / full.norm(dim=-1))
-    assert row[10:].mean() < 2 * row[:10].mean(), row.tolist()
+    # the 2x ratio vs the pre-boundary rows assumes they carry baseline rounding;
+    # on sm_80 they can round exactly equal (baseline 0), so floor it with the
+    # same 2% noise budget the norm gates above allow
+    assert row[10:].mean() < max(2 * row[:10].mean(), 2e-2), row.tolist()
     row = ((stepped - full[4:]).norm(dim=-1) / full[4:].norm(dim=-1))
-    assert row[8:].mean() < 2 * row[:8].mean(), row.tolist()
+    assert row[8:].mean() < max(2 * row[:8].mean(), 2e-2), row.tolist()
 
 
 def test_graph_replay_matches_eager_bucketed_step():

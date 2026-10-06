@@ -5,6 +5,7 @@ the raw continuation) every draft is accepted and the output must still equal
 raw greedy, which exercises the commit path."""
 import sys
 
+import pytest
 import torch
 
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
@@ -109,6 +110,8 @@ def test_spec_graph_with_fp8_mtp_cache_runs():
     """The MTP head's cache in fp8: prompt pass (prefill path), batched and chained
     draft rows (fused path) all go through the fp8 kernels; drafts stay plausible
     (they are compared against a bf16-cache head on the same random weights)."""
+    if torch.cuda.get_device_capability() < (8, 9):
+        pytest.skip("fp8 needs sm_89+; sm_80 (A800) runs the bf16 KV cache")
     w = random_weights(CFG, "triton")
     toks = torch.randint(0, CFG.vocab, (30,), device=DEV)
     drafts = {}
