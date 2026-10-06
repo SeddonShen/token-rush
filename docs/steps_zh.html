@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Token Rush 优化路线图 · 35 步与核心概念</title>
+<style>
+  :root {
+    --ink: #1a1a19; --ink2: #52514e; --muted: #898781;
+    --surface: #fcfcfb; --card: #ffffff; --line: #e1e0d9;
+    --accent: #2a78d6; --accent2: #eb6834; --green: #1baf7a;
+    --chipbg: #eef4fb; --chipborder: #c9dcf3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface); color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.75; font-size: 16px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px 80px; }
+  header.hero { text-align: center; padding: 56px 20px 8px; }
+  .hero h1 { font-size: 34px; margin: 0 0 6px; letter-spacing: .5px; }
+  .hero .sub { color: var(--ink2); font-size: 17px; max-width: 660px; margin: 0 auto; text-align: left; }
+  .hero .big { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .hero .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 22px; min-width: 150px;
+  }
+  .stat .v { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 13px; color: var(--muted); }
+  .formula {
+    margin: 34px auto 0; max-width: 660px; background: var(--card); border: 1px solid var(--line);
+    border-left: 4px solid var(--accent); border-radius: 10px; padding: 16px 22px; text-align: left;
+  }
+  .formula code { background: none; font-size: 16px; }
+  nav.phases {
+    position: sticky; top: 0; z-index: 10; background: rgba(252,252,251,.96);
+    border-bottom: 1px solid var(--line); margin: 36px -20px 0; padding: 8px 20px;
+    display: flex; gap: 6px; flex-wrap: wrap; backdrop-filter: blur(6px);
+  }
+  nav.phases a {
+    font-size: 13.5px; color: var(--ink2); text-decoration: none; padding: 4px 12px;
+    border-radius: 999px; border: 1px solid transparent;
+  }
+  nav.phases a:hover { border-color: var(--accent); color: var(--accent); }
+  h2.phase { font-size: 24px; margin: 56px 0 4px; padding-top: 10px; }
+  .phase-desc { color: var(--ink2); margin: 0 0 20px; font-size: 15px; }
+  .step {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 24px 16px; margin: 14px 0; scroll-margin-top: 70px;
+  }
+  .step h3 { margin: 0 0 2px; font-size: 17.5px; }
+  .step h3 .n {
+    display: inline-block; background: var(--ink); color: var(--surface);
+    border-radius: 8px; font-size: 13px; padding: 1px 9px; margin-right: 10px;
+    vertical-align: 2px; font-variant-numeric: tabular-nums;
+  }
+  .step .meta { font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+  .step p { margin: 8px 0; }
+  .step .why {
+    color: var(--ink2); font-size: 15px; background: #f6f6f3;
+    border-radius: 8px; padding: 8px 14px; margin: 10px 0;
+  }
+  .step .why b { color: var(--ink); }
+  .nums { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .num {
+    border: 1px solid var(--line); border-radius: 8px; padding: 5px 12px; font-size: 14px;
+    background: #fbfaf7;
+  }
+  .num b { font-variant-numeric: tabular-nums; }
+  .num.hl { border-color: var(--green); background: #f0faf6; }
+  .num.a800 { border-color: var(--accent2); background: #fdf4ef; }
+  .num.a800::before { content: "A800 "; font-size: 11px; color: var(--accent2); font-weight: 700; }
+  .chips { margin-top: 8px; }
+  .chip {
+    display: inline-block; font-size: 12.5px; color: var(--accent); background: var(--chipbg);
+    border: 1px solid var(--chipborder); border-radius: 999px; padding: 1px 11px;
+    margin: 2px 4px 2px 0; cursor: pointer; text-decoration: none;
+  }
+  .chip:hover { background: var(--accent); color: #fff; }
+  .concept {
+    background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--green);
+    border-radius: 12px; padding: 18px 22px 12px; margin: 14px 0; scroll-margin-top: 70px;
+  }
+  .concept h3 { margin: 0 0 8px; font-size: 18px; }
+  .concept p { margin: 8px 0; color: var(--ink2); }
+  .concept p b, .concept p strong { color: var(--ink); }
+  .concept .back { font-size: 12.5px; color: var(--muted); text-decoration: none; }
+  .concept .back:hover { color: var(--accent); }
+  footer { margin-top: 60px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
+  #chart { width: 100%; height: auto; margin: 8px 0 0; }
+  .legend { font-size: 13px; color: var(--ink2); display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .ring { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 2.5px solid #eb6834; }
+  code { background: #f0efe9; border-radius: 5px; padding: 1px 6px; font-size: 14px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Token Rush · 35 步优化路线图</h1>
+  <p class="sub">一台 RTX 5090 上，把 Qwen3.8-27B 的单流解码从 <b>3.2 tok/s</b> 做到 <b>224 tok/s</b> 的完整过程。每一步做了什么、为什么有效、涉及哪些概念——概念标签可以点，点开有解释；我们正在 A800 上重走这条路，橙色数字就是 A800 上的实测。</p>
+  <div class="big">
+    <div class="stat"><div class="v">3.2 → 224</div><div class="k">tok/s，35 步</div></div>
+    <div class="stat"><div class="v">81%</div><div class="k">raw 解码占带宽墙比例</div></div>
+    <div class="stat"><div class="v">1.13×</div><div class="k">验证 7 个草稿 vs 解码 1 个</div></div>
+    <div class="stat"><div class="v">256k</div><div class="k">可用上下文（26 GB）</div></div>
+  </div>
+  <div class="formula">
+    整个项目的物理学只有一行公式：<br>
+    <code>tok/s ≈ 显存实测读带宽 ÷ 每步要读的字节数</code><br>
+    5090 实测 1701 GB/s，我们的 A800 实测 <b>1902 GB/s</b>。所有优化只做两件事：<b>少读字节</b>（量化）或<b>每步多出几个 token</b>（投机解码）。
+  </div>
+</header>
+
+<nav class="phases">
+  <a href="#phase1">① 骨架与正确性</a>
+  <a href="#phase2">② 融合</a>
+  <a href="#phase3">③ 投机解码</a>
+  <a href="#phase3b">③b DFlash2</a>
+  <a href="#phase3c">③c Marlin</a>
+  <a href="#phase4">④ 收尾与终测</a>
+  <a href="#concepts">概念词典</a>
+</nav>
+
+<div id="chartbox" style="margin-top: 30px;">
+<svg id="chart" viewBox="0 0 920 360" xmlns="http://www.w3.org/2000/svg"></svg>
+<div class="legend">
+  <span><span class="dot" style="background:#898781"></span>raw 解码（不开投机）</span>
+  <span><span class="dot" style="background:#2a78d6"></span>投机解码 · 英文散文</span>
+  <span><span class="ring"></span>A800 当前位置（未调参）</span>
+</div>
+</div>
+
+<div id="steps"></div>
+
+<h2 class="phase" id="concepts" style="margin-top:70px;">概念词典</h2>
+<p class="phase-desc">路线图里出现的每个概念，按第一次出现的大致顺序排列。读完这一节，上面的步骤卡应该每一行都能看懂。</p>
+<div id="glossary"></div>
+
+<footer>
+  数据来源：仓库 <code>docs/progress.md</code>（作者的完整日志）、<code>README.md</code>、<code>docs/baselines.md</code>；A800 数字来自 <code>docs/a800.md</code>（2026-10-06 本机实测）。本页零依赖、可离线打开；要改内容直接编辑页内 <code>STEPS</code> / <code>CONCEPTS</code> 数组。
+</footer>
+</div>
+
+<script>
+/* ============ 数据：概念词典（id 用于步骤卡的标签链接） ============ */
+const CONCEPTS = [
+{id:"wall", title:"带宽墙（内存墙）", body:
+"<p><b>单个请求逐 token 生成时，GPU 不是在“算”，而是在“搬”。</b>每生成一个 token，都要把全部模型权重和当前上下文的 KV 缓存从显存完整读一遍——没有重复利用、没有捷径。所以速度上限不是算力决定，而是显存读带宽决定的：实测带宽 ÷ 每步字节数 = tok/s 上限，这就叫“撞墙”。</p>" +
+"<p>为什么要<b>实测</b>带宽而不是抄规格表：5090 规格写 1792 GB/s，实测稳定在读 1701 GB/s；我们的 A800-SXM4-80GB 规格写 2039，实测 1902。差的那几个百分点，就是“看起来能到、实际到不了”的部分。</p>" +
+"<p>这张墙也解释了整个项目的取舍：batch=1 时算力大量闲置（张量核心基本在睡觉），唯一稀缺的是带宽。这与服务器“高吞吐批处理”的追求完全相反，也是通用引擎在这条单流赛道上跑不过专用引擎的根本原因。</p>"},
+{id:"bytes", title:"每步字节数（记账单位）", body:
+"<p>整个项目用“字节”记账，每个优化都要说清楚省了或多读了多少字节：</p>" +
+"<p><b>权重</b>：26.9B 文本参数 × 4.25 bit ≈ <b>14.3 GB/步</b>，这是大头。<b>KV 缓存</b>：每个历史 token 占 64 KB（bf16）或 32 KB（FP8），上下文越长这部分越大。<b>embedding 表</b>（2.5 GB）<b>不计</b>：每步只按行读其中一行，量级可忽略——第 31 步还专门纠正了对手在这上的记账错误。</p>" +
+"<p>对照着算：4.25 bpw 权重 14.3 GB ÷ 1701 GB/s ≈ 8.4 ms，加上 KV 就是每步耗时的物理下限。任何一步的实测时间减去这个下限，就是剩下的优化空间。</p>"},
+{id:"quant", title:"量化：int4 / bpw / GPTQ / KL", body:
+"<p><b>量化</b>就是把每个权重从 bf16（16 bit）压成 4 bit 的整数码。这一步直接决定墙的高度：26.9B 参数从 32 bit 压到 4.25 bit，每步读的字节少 7 倍多，tok/s 上限就高 7 倍多。<b>bpw</b>（bits per weight）是含附加量的有效位数：每 128 个权重额外存一对 bf16 的 scale（缩放）和 min（偏移），所以是 4.25 而不是 4.0。</p>" +
+"<p>怎么选码字有讲究：<b>RTN</b>（round-to-nearest，四舍五入）最省事但误差大；<b>GPTQ</b> 拿几百段真实文本做校准、逐层最小化输出误差，再加 <b>MSE 范围搜索</b>（牺牲少数离群值换全组精度），把 KL 散度从 0.055 压到 0.023。</p>" +
+"<p><b>怎么量质量损失</b>：对 8 万个位置算量化模型与 bf16 模型输出分布的 <b>KL 散度</b>（越小越像）、<b>top-1 一致率</b>（预测出同一个 token 的比例）、<b>困惑度 PPL</b>（对文本的“惊讶程度”，越低越好）。最终 GSM8K 数学题通过率 97.0%，比 bf16 的 96.0% 还略高（噪声级差异）。</p>"},
+{id:"gemv", title:"GEMV / GEMM 与 M 行 kernel", body:
+"<p>神经网络一步的核心计算是矩阵乘 <code>y = x · Wᵀ</code>。<b>M</b> 是输入的行数：</p>" +
+"<p><b>M=1（普通解码）是 GEMV</b>：一个向量乘一个大矩阵。纯粹受带宽限制——每个权重都要动一次，乘法本身近乎白送，目标就是“流式读得多快”。<b>M=8（验证 7 个草稿）是瘦 GEMM</b>：8 个向量乘同一个矩阵。</p>" +
+"<p>理想的 M 行 kernel 应该“读一遍权重、算 8 行”——权重反正只读一次，多算几行近乎免费。这正是投机解码可行的硬件基础。Triton 自写的 M 行 kernel 到 M=8 掉了 15–20%（每块固定的反量化开销），Marlin 做到 M=16 与 M=1 同带宽，这就是第 28 步的价值。</p>"},
+{id:"launch", title:"kernel 启动开销与 CUDA Graph", body:
+"<p>GPU 上每个算子（kernel）都要 CPU 先“发射”一次：走驱动、配参数，单次约 10 微秒上下。一步里有几千个小算子时，<b>CPU 发射速度跟不上了</b>：第 3 步实测 GPU 干活只要 18 ms，CPU 发射却要 30 ms——GPU 在空等指令，这叫 launch-bound。</p>" +
+"<p><b>CUDA Graph</b> 是解法：把整步几百个 kernel 的调用录制成一张“图”，之后每步只发一条 replay 指令，整图一口气执行。代价是所有形状必须静态（所以位置要变成设备上的张量、上下文长度要分桶或用掩码处理）。第 4 步一张图把启动时间从 9 ms 砍到 0——<b>10 ms 的步预算里砍掉 9 ms</b>，全程最大的一笔。</p>" +
+"<p>顺带一提：这个模型 64 层里有 48 层是 GDN 递归层，每层是一串小算子——恰好是“带动态批处理的通用引擎无法整图捕获”的形态，这就是专用引擎独有的机会。</p>"},
+{id:"fusion", title:"算子融合（fusion）", body:
+"<p>把一个大计算拆成很多小 kernel 的代价：每次启动要花钱（见上一条），每次读写中间结果都要过一遍显存。融合把一串小算子合成一个 kernel：数据留在寄存器和共享内存里，出门一次。</p>" +
+"<p>本项目最猛的融合：一个 GDN 层原本 26 个 kernel（卷积、门控、范数、状态更新……）合成 <b>1 个</b>；残差加+RMSNorm 11 合 1；注意力的 q/k 范数+RoPE+KV 写入合成一个 prep kernel。融合还有个隐藏福利：<b>统一舍入顺序</b>——融合版与 HF 参考实现逐位一致的例子，就是靠对齐浮点累加顺序做到的。</p>"},
+{id:"kv", title:"KV 缓存与 FP8", body:
+"<p>注意力机制生成每个新 token 时要“回看”前面所有 token 的 Key/Value 向量。为避免重算，把它们缓存下来：<b>每 token 约 64 KB（bf16）</b>。100 万 token 的上下文就是 64 GB——所以长上下文的本质问题是显存和带宽。</p>" +
+"<p><b>FP8</b>（e4m3：1 符号 + 4 指数 + 3 尾数）把每个数从 2 字节压到 1 字节，每 token 降到 32 KB，配一个每（头，位置）的缩放系数。5090（32 GB）靠它才放得下 256k 上下文。<b>A800（sm_80）没有原生 FP8 硬件支持，我们跑 bf16 缓存——80 GB 显存放 256k 毫无压力</b>。这正说明：技巧是约束的函数，约束变了，技巧就该变。</p>"},
+{id:"flashdec", title:"Flash Decoding 与 split-K", body:
+"<p>注意力对长上下文的计算是“当前 1 个查询 × 全部历史 K/V”。<b>Flash decoding</b> 把 K/V 序列切成小块流式处理，用<b>在线 softmax</b>（边扫边维护 running max/sum，不需要先算出完整的注意力分数矩阵）避免把大中间结果写回显存。</p>" +
+"<p><b>split-K</b> 是并行度的关键：把 key 序列切成 32 段分给不同线程块同时算，各出一份部分结果，再由一个 reduce kernel 合并。没有 split，一个头一次只能占一个线程块，一百多个 SM 大量闲置。第 22 步还有个好例子：这个 kernel 只把流水线级数从 2 改成 3，带宽利用率就从 67% 涨到 92%——<b>一个常数的一堂课</b>。</p>"},
+{id:"gdn", title:"GDN（Gated DeltaNet）递归层", body:
+"<p>Qwen3.5 是<b>混合架构</b>：64 层里 48 层是 GDN（线性注意力/递归网络家族），16 层是标准注意力。GDN 层用一个<b>固定大小的状态矩阵</b>代替不断变长的 KV：每步用 delta 规则更新状态（类似“带删除门的 RNN”），单步代价是 O(1)——<b>不随上下文变长而变贵</b>。</p>" +
+"<p>这带来两个后果：① 长上下文衰减慢（48/64 层的成本是常数）；② 递归层的解码步是“一串小算子”，零散到通用引擎处理不高效，但可以被整图捕获（CUDA graph）和单 kernel 融合——本引擎两个最大的优化都因它而起。代价是：递归天生串行，验证多行草稿时必须逐 token 走（第 13 步用“状态快照槽”解决提交问题）。</p>"},
+{id:"spec", title:"投机解码（speculative decoding）", body:
+"<p><b>核心矛盾</b>：生成 1 个 token 要读完 14 GB 权重，而 GPU 算力闲着——那能不能一次读权重，多出几个 token？</p>" +
+"<p><b>做法</b>：一个便宜的<b>草稿模型（draft）</b>先连猜 K 个 token（它读的字节少得多），然后目标模型做一次 <b>M=K+1 的前向</b>，同时验证这 K 个猜测和它们后面那个真 token。从前往后数猜对的前缀 n，全部收下，再白拿第 n+1 个位置的 token——<b>每步产出 n+1 个而不是 1 个</b>。猜错了也不亏：错误被纠正，输出永远和不用投机时完全一致（greedy 下逐 token 相等，这是可以严格验证的性质）。</p>" +
+"<p>两个关键指标：<b>接受率</b>（每步平均收下几个 token，散文 2.5–3.2、代码 5+、数学 5+——文本越“可预测”越高）和<b>验证步倍率</b>（验证一步的成本 = 1.13 个原始步，接近免费）。乘起来决定一切：raw 101 × 约 2.2 ≈ 224。它是穿过带宽墙的唯一办法。</p>"},
+{id:"mtp", title:"MTP 头（多 token 预测）", body:
+"<p>模型出厂自带的 0.42B 参数“多 token 预测”头，原本是训练时的辅助任务。它拿目标模型最后一层的隐状态做输入，能以极低成本（读 0.2 GB 而不是 14 GB）猜下一个 token；把输出接回输入就连成链，猜第 2、3、4 个。</p>" +
+"<p>第 12 步先“teacher-forcing”实测它的接受率（depth 3 每步收 2.58–3.50 个）才决定用它——先测量、后动工的范例。中文文本上它比 DFlash2 强（2.2 vs 1.8/步），所以引擎默认按语言自动切换两个草稿。</p>"},
+{id:"dflash", title:"DFlash2：块扩散草稿", body:
+"<p>z-lab 训练的 1.92B、5 层草稿模型，思路完全不同于链式 MTP：<b>一次前向直接吐一整块 7 个 token</b>。做法来自扩散模型——输入是 7 个 mask 占位符，块内用<b>双向注意力</b>（7 个位置互相看见），再以目标模型第 5/19/33/47/61 层的隐状态为条件注入每层。自带一个 rank-256 候选选择器给每个位置挑 top-16。</p>" +
+"<p>它的接受率（英文散文 3.6、代码 5.4、数学 5.8/步）不低于 MTP 链，而草稿成本一次前向搞定，上下文窗口只有 2048（长上下文几乎免费）。弱点：训练语料里中文散文少，接受率掉到 1.77——所以中文场景引擎自动切回 MTP 链。</p>"},
+{id:"marlin", title:"Marlin 与 Tensor Core", body:
+"<p><b>张量核心（tensor core）</b>是 GPU 里做小矩阵乘法的专用电路（<code>mma.sync</code> 指令），一条指令算一个 16×8×16 之类的小块。Marlin 是 IST-DASLab 的开源 int4 矩阵乘 kernel，专为“瘦矩阵 × 量化权重”这个场景而生：int4 码在寄存器里用位技巧（lop3）直接变成 fp16 片段参与 mma，反量化与访存用 4 级 <code>cp.async</code> 流水线重叠——<b>M=16 和 M=1 花的时间一样</b>，因为反正瓶颈是把权重搬进来。</p>" +
+"<p>本项目把它移植成 bf16 激活 + 自家的非对称 g128 格式（第 28 步），验证步从 1.35× 降到 1.13×。一个历史注脚：原版 Marlin 的 L2 evict-first 缓存提示在 5090（sm_120）上非法，作者删掉了；<b>Marlin 本来就是 sm_80（Ampere）的 kernel，A800 是它的原生故乡，那个提示在我们卡上合法——加回来是我们的现成练习题</b>。</p>"},
+{id:"l2", title:"L2 缓存与自动调参陷阱", body:
+"<p><b>L2 缓存</b>是显存和计算单元之间的一层高速缓存（5090 是 96 MB）。比显存快得多，但装不下任何一个大权重矩阵。</p>" +
+"<p>陷阱：自动调参工具测各配置的速度时，被测矩阵一直躺在 L2 里没出去过——于是选中的是“L2 最优”配置；真实解码时权重是从显存流过来的，L2 帮不上忙，就选错了。第 11 步的对策：<b>调参时循环灌入 400 MB 以上的权重副本</b>把 L2 冲干净，让测量反映真实。教训通用：<b>测什么，就要让测量环境长得像真实环境</b>。</p>"},
+{id:"draftvocab", title:"草稿词表截断", body:
+"<p>草稿模型每猜一个 token，要把 lm_head（248k 行 × 5120 列 = 0.68 GB）整个读一遍选最大值。但<b>草稿只需要“可能对”，不需要“一定对”</b>——猜错只是被拒绝，不伤输出。所以可以让它只在词表的前 128k 行里选。</p>" +
+"<p>为什么前 128k 行安全：tokenizer 的 id 顺序就是 BPE 合并次序，约等于训练语料的词频排序，天然多语言。反例同样有名：一份按英文语料频率选的 64k 词表只保留了 55,328 个 CJK token 中的 147 个，中文直接掉到比不开投机还慢。<b>截断省的是字节，赌的是覆盖</b>。</p>"},
+{id:"verify", title:"验证步与设备端提交", body:
+"<p>投机解码的工程核心是<b>验证步（verify step）</b>：一次 M=K+1 的前向，同时算出“已确认 token + K 个草稿”每个位置的 logits。然后<b>全程在 GPU 上</b>完成：逐位置取 argmax → 数前缀命中数 n → 提交（下一个输入 token = 第 n+1 位的 argmax，位置 += n+1，GDN 状态切换到第 n 个快照槽）。只有 n 这一个数回到 CPU。</p>" +
+"<p>任何一步回了 CPU，整张 CUDA graph 的低成本就碎了——所以位置是设备张量、掩码按位算、草稿在图内接力。这是“把一个算法改写成图友好形态”的完整示范。</p>"},
+{id:"gate", title:"正确性关卡（差分测试）", body:
+"<p>速度优化最大的风险是把数学改坏。这个项目的纪律：<b>每个新 kernel 都对照它替换的旧实现（最终对照 PyTorch 参考实现）做差分测试</b>；bf16 全精度路径对照 HuggingFace transformers <b>逐 token 相等</b>（48/48）；投机 greedy 输出必须和原始 greedy 完全一致；CUDA graph 回放必须和逐算子执行位级一致。65+ 个测试常驻仓库。</p>" +
+"<p>它真抓过 bug：第 8 步一个部分和尾行错误让 KL 从 0.06 涨到 0.196，<b>而生成出来的文本仍然完全通顺</b>——肉眼永远发现不了，只有关卡能。教训：流畅的输出不等于正确的实现。</p>"},
+{id:"measure", title:"实测纪律", body:
+"<p>这个项目的方法论：每一步、每个决定都先测后做，负结果也记录。</p>" +
+"<p>几个范式：<b>teacher-forcing 测接受率</b>——让目标模型先贪心生成，再把草稿对齐真实续词逐位比对，不用跑完整循环就能预演投机收益；<b>对手同日重跑</b>——所有对比数字来自同一台机器同一次开机，避免跨天环境的虚假差距；<b>字节数对账</b>——连对手的 bytes/step 都要检查口径（第 31 步纠出了 vLLM 多算的 12 个百分点）；<b>模拟后再动工</b>——草稿树（第 23 步）先静态模拟出“接受 +10%、成本 +20%、净负”的结论，省下几天开发换一个不做。</p>"},
+];
+
+/* ============ 数据：35 步 ============ */
+const STEPS = [
+{phase:1, n:1, date:"09-08", title:"环境与权重",
+ what:"下载 55.6 GB 的 bf16 原始权重，从模型 config 里读清架构事实：64 层 = 48 个 GDN 递归层 + 16 个注意力层，MTP 头 0.425B，视觉塔直接丢弃。",
+ why:"先看清地形再动工：<b>48 层恒定大小的递归状态</b>既是长上下文不掉速的原因，也是后面两个最大优化（整图捕获、单 kernel 融合）的机会所在。",
+ nums:[["bf16 权重","55.6 GB"],["文本路径参数","26.9B"]], concepts:["gdn"]},
+{phase:1, n:2, date:"09-08", title:"骨架跑通（慢得离谱是预期）",
+ what:"800 行代码：显式状态 + 层写成纯函数；全部用现成组件（fla 的 GDN kernel、SDPA 注意力、cuBLAS 矩阵乘）；权重已按 int4 打包，但矩阵乘用的是“先整个反量化成 bf16 再乘”的傻瓜做法。",
+ why:"先保证<b>正确</b>再谈快。3.2 tok/s 的病灶清清楚楚：每步把 14 GB 的 int4 展开成 28 GB 的 bf16 再读回来——字节翻倍，还没算启动开销。",
+ nums:[["prefill","1490 tok/s"],["decode","3.2 tok/s",1],["10 个差分测试","全过"]], concepts:["quant","gemv","gate"]},
+{phase:1, n:3, date:"09-08", title:"GEMV 海选：自写 Triton kernel 上位",
+ what:"6 个候选 kernel 在真实矩阵形状上实测带宽：自写 Triton int4 GEMV 拿到墙的 92%，胜过 vLLM 的 Marlin 和 torch 的 tinygemm；顺手把 q|k|v、gate|up 这些总是一起算的投影矩阵在加载时拼成一个大矩阵。",
+ why:"两个教训值钱：① GEMV 的好坏只看“流式读得多接近墙”；② 拼接省的不止矩阵本身——一个 2.8 MB 的 GEMV 光启动就要 6 微秒，拼起来就是白赚。此后瓶颈换人：CPU 启动 30 ms 超过 GPU 计算的 18 ms。",
+ nums:[["decode","3.2 → 36 tok/s",1],["GEMV","92% 墙"],["CPU 启动","30 ms"]], concepts:["gemv","launch","fusion"]},
+{phase:1, n:4, date:"09-08", title:"整步 CUDA Graph（全程最大单笔）",
+ what:"把位置改成设备上的张量，让每步的所有形状静态化，整步几百个 kernel 录制成一张图，一步 = 一次 replay；本步的 argmax 直接在 GPU 上写进下一步的输入 token，全程不回 CPU。",
+ why:"启动开销被连根拔掉：解码步从“CPU 忙 30 ms + GPU 等 18 ms”变成纯 GPU 14.6 ms。<b>10 ms 的预算砍掉 9 ms</b>——而这只有在没有动态批处理的单流引擎里才做得到，通用引擎吃不下全部红利。",
+ nums:[["decode","36 → 68.4 tok/s",1],["步时","14.6 ms = 纯 GPU"],["占墙","55%"]], concepts:["launch"]},
+{phase:1, n:5, date:"09-08", title:"对照 HuggingFace 的正确性关卡",
+ what:"bf16 全精度路径与 HF transformers 逐层比对残差流、逐 token 比对贪心输出：64 层误差从 0.17% 平滑涨到 2%（bf16 累加的正常水平，无跳变），48/48 个贪心 token 完全相同。",
+ why:"从这一步起，“引擎是对的”成为<b>公理</b>，后面每个融合 kernel 只需对照它替换的旧算子测试即可。没有这一步，后面所有速度优化都是在流沙上盖楼。",
+ nums:[["贪心 token 一致","48/48",1],["残差误差","≤2%，无跳变"]], concepts:["gate"]},
+{phase:2, n:6, date:"09-08", title:"GDN 层融合：26 个 kernel → 1 个",
+ what:"每个 GDN 层的卷积步、门控、范数、delta 规则状态更新、输出门全部装进一个 Triton kernel（卷积状态改造成 4 列环形缓冲让读写不打架）；残差加+RMSNorm 11→1，silu×mul 2→1。",
+ why:"第 4 步之后图里还剩约 2200 个小 kernel 吃掉 4.4 ms，融合后 GDN 链 0.31 ms。附赠发现：融合版与 HF 逐位一致、旧的逐算子版反而不一致——cuDNN 的卷积在 fp32 累加后才舍入一次，融合对齐了这件事。",
+ nums:[["decode","68 → 83 tok/s",1],["GDN 每层","26 → 1 kernel"]], concepts:["fusion","gdn"]},
+{phase:2, n:7, date:"09-08", title:"注意力解码融合 + flash decoding",
+ what:"三个 kernel 接管注意力层：prep（q/k 范数 + RoPE + KV 写入）、flash-decoding 主 kernel（只算实际长度，切 32 段并行，在线 softmax，输出门折进合并步）、reduce 合并。上下文分桶废除，全引擎一张图。",
+ why:"注意力部分从 1.8 ms 到 0.09 ms，20 倍。“只算活长度”意味着 256k 上下文和 1k 上下文共用同一张图。每步 kernel 数从约 2500 降到约 600。",
+ nums:[["decode","83 → 99.5 tok/s",1],["注意力 16 层","1.8 → 0.09 ms"],["占墙","80%"]], concepts:["flashdec","kv","fusion"]},
+{phase:2, n:8, date:"09-08", title:"split-K GEMV：喂饱一百多个 SM",
+ what:"输出只有 5120 行的三个投影矩阵（out/o/down），线程块太少喂不饱卡——把 K 维切成 4 份并行，各写一份 fp32 部分和，由下一个融合范数 kernel 顺手求和（舍入次序对齐，不花额外启动）。b|a 小投影折进 GDN kernel，cuBLAS 从此退场。",
+ why:"窄矩阵从 78% 提到 87% 墙。这一步还贡献了全程最好的 bug 故事：部分和尾行残留让 KL 涨了 3 倍而<b>文本依然通顺</b>——只有对照 HF 的关卡抓得住它。",
+ nums:[["decode","99.5 → 102.5 tok/s",1],["占墙","82%"],["关卡抓 bug","KL 0.06→0.20"]], concepts:["flashdec","gate"]},
+{phase:2, n:9, date:"09-08", title:"FP8 KV 缓存：256k 上下文装下了",
+ what:"K/V 从 bf16 压成 e4m3（每 token 64 KB → 32 KB，配每（头，位置）一个缩放系数），prep/解码 kernel 加 FP8 分支；SDPA 读不了 FP8，于是自写 Triton flash-attention prefill kernel。",
+ why:"bf16 缓存下这张 32 GB 卡最多 32k 上下文；FP8 后 256k 装下（峰值 26 GB），200k 处解码仍有 69 tok/s、占墙 82.6%。<b>A800 注记</b>：sm_80 无原生 FP8，我们跑 bf16 缓存——80 GB 下 256k 同样装得下。",
+ nums:[["200k 处 decode","69.2 tok/s",1],["大海捞针 @262k","通过"],["bf16 KV 256k","同样装下",0,1]], concepts:["kv","flashdec"]},
+{phase:2, n:10, date:"09-08", title:"采样进图",
+ what:"temperature / top-k / top-p 全部写成形状静态、无分支的 kernel（贪心被算术地“选出来”而不是 if 出来），参数放在设备张量里、replay 时读取。",
+ why:"不进图的话，带温度采样就得回 CPU 或者碎成无数小 kernel。纯工程收尾，速度不变。",
+ nums:[["decode","不变 102"]], concepts:["launch"]},
+{phase:2, n:11, date:"09-08", title:"L2-proof 重调参（阶段二收官）",
+ what:"怀疑自动调参被 L2 缓存骗了（调参时矩阵一直躺在 96 MB 的 L2 里）：循环灌入 400 MB 权重副本冲干净 L2 后重测全部配置。",
+ why:"结论比动作重要：重选配置后整步只快了噪声级——<b>卡在 87–93% 的不是参数而是 kernel 结构本身</b>（每个线程块串行扫完整个 K 维）。把“最后 5%”留给重构而不是调参，这个判断后来被 Marlin（第 28 步）证明完全正确。",
+ nums:[["decode","102.2 tok/s（82% 墙）",1],["重调参收益","≈0"]], concepts:["l2"]},
+{phase:3, n:12, date:"09-08", title:"先测 MTP 接受率，再决定造不造",
+ what:"实现模型自带的 0.42B MTP 头（先不进图），用 teacher-forcing 在每族 256 token 上实测链式草稿的接受率。",
+ why:"投机的全部收益 = 接受率 × 验证成本，动工前必须先知道前者。实测 depth-3 每步收 2.58/3.35/3.50（散文/代码/数学），比立项假设还乐观——预测 raw 102 × 接受率 ≈ 210–280 tok/s 可达。先测量后动工的教科书案例。",
+ nums:[["接受率 depth3","2.58 / 3.35 / 3.50",1]], concepts:["spec","mtp","measure"]},
+{phase:3, n:13, date:"09-08", title:"验证步进图：一切 kernel 学会算多行",
+ what:"GEMV 出 M 行变体（反量化一次、张量核心一次算 8 行）；GDN kernel 内部串行走 M 个 token，状态写进 M 个“快照槽”，提交时指名第 n 个槽、零拷贝；注意力 M 行查询。接受/提交全部在设备上完成。",
+ why:"K=3 验证步 = 1.22× 原始步（理想假设 1.1×，多出的部分后来由 Marlin 收回）。加上还不在图里的草稿：172/212/204 tok/s，已超所有对手的投机模式。验收标准苛刻：投机 greedy 输出必须与原始 greedy <b>逐 token 相等</b>。",
+ nums:[["投机","172 / 212 / 204",1],["K=3 验证","1.22× 原步"]], concepts:["verify","gemv"]},
+{phase:3, n:14, date:"09-08", title:"草稿链进图 + 自适应深度",
+ what:"每个深度一张图：批量 MTP 前向（行号由上一步接受数在设备上算出）→ 链式草稿 → 验证。MTP 头也量化成 int4（0.85→0.21 GB）。深度自适应：K = clamp(上次接受数+2, 3, 4)。",
+ why:"草稿从约 150 次启动的 eager 执行变成图内 1.4 ms。183/254/258 tok/s，是当时最强对手的 1.26–1.9 倍。散文没到 200 的原因也清楚了：接受率 2.56/步 × 14 ms/步的算术——出路要么更便宜的验证、要么更好的草稿，两条路后面各走了一步。",
+ nums:[["投机","183 / 254 / 258",1],["vs 最强对手","1.4× / 1.9× / 1.26×"]], concepts:["spec","verify"]},
+{phase:3, n:15, date:"09-08", title:"投机成为默认解码",
+ what:"run.py 默认带投机；prefill 改成分块并保留每个位置的隐状态（MTP 头的提示输入）；处理 eos 出现在接受链中间、缓存将满提前刹车等边界。",
+ why:"从“功能”变成“默认”，工程上全是边界情况：30k 大海捞针 4.3 token/步、max_len 边界实测停在 8190/8192。",
+ nums:[["30k 捞针","280 tok/s，4.3/步"]], concepts:["spec"]},
+{phase:3, n:16, date:"09-08", title:"投机采样：输出分布严格不变",
+ what:"带温度时，验证步在每个位置从目标分布抽一个签 y：草稿 x 恰好等于 y 就收下 x，否则直接提交 y。数学上这恰好是教科书拒绝采样在确定性草稿下的等价形式。",
+ why:"投机解码最常见的误解是“会伤采样质量”。这个抽签规则给出严格保证：<b>每个提交的 token 都精确服从目标模型自己的分布</b>，草稿只改速度、不改分布。实测 T=0.7 下 167/237/239。",
+ nums:[["T=0.7 采样","167 / 237 / 239",1],["输出分布","= 原始采样，精确"]], concepts:["spec"]},
+{phase:3, n:17, date:"09-08", title:"投机 vs 上下文长度",
+ what:"在真实长文本（WikiText / torch 源码）上量投机随上下文的衰减，把投机步 14.4→22 ms 的增长逐项归因。",
+ why:"归因结果：额外增长几乎全在 MTP 头自己的注意力——它每步读自己那份 200k 缓存约 4 次。200k 处仍有 174 tok/s，而所有对手在 200k 处最多 61。诊断先于优化的又一次示范。",
+ nums:[["200k 散文","174 tok/s",1],["200k raw","68.4"]], concepts:["measure","kv"]},
+{phase:3, n:18, date:"09-08", title:"MTP 头的缓存也上 FP8",
+ what:"草稿头的 KV 缓存跟随主引擎用 FP8（草稿只影响速度不影响输出，它的缓存精度无所谓）。",
+ why:"200k 处每步省 0.7 ms。小，但免费。",
+ nums:[["200k 散文","174 → 180"]], concepts:["kv"]},
+{phase:3, n:19, date:"09-08", title:"M 行 kernel 重调参：确认结构性天花板",
+ what:"对 M=4 的 M 行 kernel 做 L2-proof 全配置扫描（每形状 72 个配置）。",
+ why:"调参只能收回 0–1.7 个点：M 行 kernel 卡在 79–84% 墙是<b>结构性的</b>——每个权重块固定的反量化+转置开销。这直接立项了第 28 步的 Marlin。识别“调参解决不了、要换设计”同样是重要能力。",
+ nums:[["K=3 验证","1.20×（调不动）"]], concepts:["l2","gemv"]},
+{phase:3, n:20, date:"09-08", title:"截断草稿词表：128k 行，语言中立",
+ what:"草稿选 token 只看 lm_head 前 128k 行（tokenizer 的 id 序 = BPE 合并序 ≈ 多语言词频序），每步省 0.7 ms。",
+ why:"配套的反例更有教育意义：一份英文语料频率的 64k 词表只含 147 个 CJK token，中文接受率崩到 1.19/步、比不开投机还慢。<b>截断省的是字节，赌的是覆盖</b>；id 序方案六语族无一受损，中文反而微升。",
+ nums:[["投机","186 / 261 / 263",1],["每步","−0.7 ms"]], concepts:["draftvocab"]},
+{phase:3, n:21, date:"09-08", title:"语料定制词表：收益封顶",
+ what:"用英文维基 / torch 源码 / 中文维基三种语料各建词表，六语族实测对比。",
+ why:"最好的 mix_96k 也只比默认好 5%（混合文本）。结论：词表是个小杠杆，语言覆盖问题解决后不值得再投入。知道何时停手。",
+ nums:[["mix_96k 混合文本","+5%"]], concepts:["draftvocab"]},
+{phase:3, n:22, date:"09-09", title:"200k 性能剖析：改一个常数 +10%",
+ what:"profile 发现 200k 处的 attention split kernel 在 M=4 时只跑出 1147 GB/s（67% 墙）；扫描后发现把流水线级数 num_stages 从 2 改成 3 就够。",
+ why:"1390 → 1587 GB/s（93% 墙）。raw @200k 从 68.4 到 71.7 tok/s（85.6% 墙），投机 180→195。<b>一个常数的一堂课</b>：先剖析定位、再参数扫描，有时比重构便宜一百倍。",
+ nums:[["raw @200k","71.7 tok/s（85.6% 墙）",1],["投机 @200k","195"]], concepts:["flashdec","measure"]},
+{phase:3, n:23, date:"09-09", title:"草稿树：模拟后放弃（重要的负结果）",
+ what:"链式草稿一次只能赌一条路；树（top-2 分叉）理论上接受率更高。先写模拟器静态测 7 节点树的接受率，再实测 M=8 验证的真实成本，两项相除。",
+ why:"最好的树接受率 +10%（散文），但验证 +1.15 ms、草稿 7 次调用、提交路径复杂化，步成本 +20%——<b>净负 8–13%</b>，放弃。整个过程没写一行引擎代码。敢于用两小时测量换“两周开发不做错事”，是这份日志里最值得学的决策。",
+ nums:[["接受率","+10%"],["步成本","+20%"],["结论","净负，放弃",1]], concepts:["measure","spec"]},
+{phase:"3b", n:24, date:"09-09", title:"调研：还有什么可拿（DFlash2 现身）",
+ what:"系统调研 2025–26 年单流投机的工作，并用 teacher-forcing 在自家 int4 目标上实测 z-lab DFlash2 块扩散草稿的接受率。",
+ why:"DFlash2 一次前向出 7 个 token、接受率 3.57/5.37/5.76——两项都优于 MTP 链，且上下文窗口只有 2048（长上下文几乎免费）。预测进图后 238/358/384。同样重要的一半是“不做什么”：DSpark、n-gram、EAGLE-3 逐条给出不做的理由。",
+ nums:[["DFlash2 接受率","3.57 / 5.37 / 5.76",1],["预测","238 / 358 / 384"]], concepts:["dflash","measure"]},
+{phase:"3b", n:25, date:"09-09", title:"DFlash2 进图（第一版）",
+ what:"用自家 kernel 实现草稿的整个前向（与 z-lab 参考实现逐位一致），投影全部 int4；捕获目标模型 5 层隐状态喂给它；一张图 = 草稿块 + K=7 验证。",
+ why:"代码/数学 +17%，但散文反而没涨：profile 显示 GDN kernel 在 M=8 时要写 8×64 KB 状态快照，2.37 ms 成为新瓶颈。新的代价显示在新地方——正常。",
+ nums:[["投机","178 / 306 / 310",1],["GDN M=8","2.37 ms"]], concepts:["dflash","verify"]},
+{phase:"3b", n:26, date:"09-09", title:"调优 DFlash 步",
+ what:"GDN kernel 每个 V 头拆成两个程序让快照写并行（2.37→1.44 ms）；草稿的范数/卷积/选择器全部 kernel 化；带掩码的 SDPA 比无掩码慢 7 倍——换成自家窗口化 split kernel（0.68→0.1 ms）。",
+ why:"三个独立小优化，每步省 2 ms。途中还抓到一个自家参考实现的 bug（窗口边界按最后一行算而不是每行各算各的）——<b>kernel 是对的、参考实现错了</b>，靠与 z-lab 参考对拍定位。",
+ nums:[["投机","220 / 342 / 353",1],["步时","16.8 → 14.8 ms"]], concepts:["fusion","flashdec"]},
+{phase:"3b", n:27, date:"09-09", title:"环形缓存 + 六语族实测",
+ what:"草稿只看 2048 窗口，于是它的上下文缓存改成 4096 行环形（5.4 GB → 84 MB），256k 也能跑；conv/selector 投影也上 int4。六语族 + 200k 全量实测。",
+ why:"矩阵全景：DFlash2 赢五个族，唯独<b>中文散文</b>接受率 1.77/步、输给 MTP 链的 162 tok/s——草稿训练语料的偏置直接写进了数字。这为后来按语言自动切换埋下伏笔。",
+ nums:[["六族","217 / 355 / 350 / 121 / 289 / 212",1],["256k 峰值","29.4 GB"]], concepts:["dflash","kv"]},
+{phase:"3c", n:28, date:"09-09", title:"Marlin 级 int4 GEMM：M 平坦了",
+ what:"把 Marlin 移植成 bf16 激活 + 自家非对称 g128 格式；fp32 跨块部分和走无锁 partial 模式（窄形状 1070→1325 GB/s）；sm_120 上非法的 L2 提示继续禁用。",
+ why:"核心性质：<b>M=16 与 M=1 同带宽</b>（Triton M 行 kernel 到 M=8 要掉 15–20%）。验证 K=7 从 1.35× 降到 <b>1.13×</b>——“读一遍权重、算 8 行”近乎完全兑现。投机 224/373/373，MTP 链也涨 15% 并反超中文各族。<b>A800 注记</b>：Marlin 原生就是 sm_80 的 kernel，被删掉的 L2 evict 提示在我们卡上合法——加回来是现成练习题。",
+ nums:[["投机","224 / 373 / 373",1],["验证 K=7","1.35× → 1.13×"],["已在本机编译验证","误差 0.6%，编译 15 s",0,1]], concepts:["marlin","gemv"]},
+{phase:4, n:29, date:"09-09", title:"阶段三关闭：自动选草稿",
+ what:"证明现有抽签规则数学上已是精确拒绝采样（无需再写）；两个草稿同时常驻，按提示词 CJK 字符比例 ≥20% 自动切 MTP 链，否则 DFlash2。",
+ why:"中文散文从 129 回到 182 tok/s，英文照旧 232。另一个教训写进文档：CUDA graph 按地址持有张量，第二个草稿挂载时重分配的共享缓冲会在旧图底下被换掉、读出垃圾——两个 bug 同根。",
+ nums:[["中文散文","129 → 182",1],["英文散文","232"]], concepts:["spec","mtp","dflash"]},
+{phase:4, n:30, date:"09-09", title:"量化质量表：GPTQ + MSE",
+ what:"建立质量量尺（82k 位置对 bf16 的 KL / PPL / top-1），先给自己的 RTN 定罪（KL 0.055），再实现 GPTQ + 逐组 MSE 范围搜索；打包格式不变、速度逐位不变。",
+ why:"KL 0.0546 → <b>0.0232</b>，与 NVIDIA 的 NVFP4 QAT 打平；GSM8K 96.5% 超过 bf16 的 96.0%。诚实的部分也写了：与 ExLlamaV3 的 0.0128 差距来自均匀 16 级码本本身。<b>质量与速度两个账本在这里闭合</b>。",
+ nums:[["KL","0.055 → 0.023",1],["GSM8K","96.5%"]], concepts:["quant"]},
+{phase:4, n:31, date:"09-09", title:"对手字节数修正：公平也要算术",
+ what:"复查所有对手的 bytes/step 口径，发现大家都把 2.5 GB 的 embedding 表算进去了——每步其实只按行读一行。",
+ why:"vLLM 的“占墙比”从 88% 修正到 76%，SGLang 70%→60%。不重跑任何东西，只改算术。<b>比较的纪律</b>：连对手的账都要替他们算对。",
+ nums:[["vLLM 占墙","88% → 76%"]], concepts:["bytes","measure"]},
+{phase:4, n:32, date:"09-09/10", title:"阶段四终测：一台机器，一次开机",
+ what:"同一张卡同一天：重锚带宽墙（1702 GB/s），五个对手按各自配方重跑，引擎用发布版检查点。raw 100.9（81.0% 墙）、投机 228/357/378、采样 222/300/403。",
+ why:"这是 README 所有数字的出处。<b>同日同机</b>不是仪式感，是控制变量：跨天的驱动/温度/时钟差异足以伪造几个百分点的胜负。",
+ nums:[["raw","100.9（81.0% 墙）",1],["投机","228 / 357 / 378",1]], concepts:["measure","wall"]},
+{phase:4, n:33, date:"09-10", title:"引擎服务化",
+ what:"python -m tokenrush.serve 同时提供 OpenAI 和 Anthropic 两套 API；会话常驻引擎、按状态快照复用前缀，一轮对话只花新增 token 的成本；Claude Code 端到端跑在它上面。",
+ why:"把“快”变成可用：120k 前缀后追加 3 个 token 只要 0.44 s。单流引擎的“劣势”（一次一个请求）在个人助理场景恰好是优势——没有排队、没有抢占。",
+ nums:[["120k 前缀 + 3 token","0.44 s",1]], concepts:[]},
+{phase:4, n:34, date:"09-10", title:"十点上下文扫描（README 图表数据）",
+ what:"0 → 240k 十个位置，raw 双后端 + 投机双草稿 + 四个对手全量扫描，116 行数据入 results/。",
+ why:"曲线会说话：我们 raw 从 101 缓降到 68 且<b>占墙比反升</b>（81→86%，GDN 层恒定状态的功劳）；llama.cpp 81 → 41（attention 路径随长度劣化）。",
+ nums:[["raw 0→240k","101 → 68（81→86% 墙）",1],["llama.cpp","81 → 41"]], concepts:["gdn","wall"]},
+{phase:4, n:35, date:"09-12", title:"全矩阵重测（README 定稿）",
+ what:"换一台机器把整个对比矩阵再测一遍，用六位置 512-token 扫描替换单点上下文测量。",
+ why:"与阶段四数据差 &lt; 1.5%——<b>结果可复现</b>本身就是交付物的一部分。投机曲线从此光滑，还发现 MTP 链在 32k 上下文后反超 DFlash2。",
+ nums:[["与终测差异","&lt; 1.5%",1]], concepts:["measure"]},
+];
+
+const PHASES = {
+ 1:{t:"① 骨架与正确性（步骤 1–5）", d:"先慢后快：用现成组件搭一个正确但只有 3.2 tok/s 的骨架，同时立起“对照 HF 逐 token 相等”的正确性关卡。地基不牢，后面全部白搭。"},
+ 2:{t:"② 融合（步骤 6–11）", d:"CUDA graph 之后瓶颈变成几千个小 kernel。融合 + flash decoding + split-K 把“非矩阵乘”压到 1 ms 以内，raw 解码站上 82% 带宽墙——纯 kernel 工程的天花板。"},
+ 3:{t:"③ 投机解码（步骤 12–23）", d:"穿过带宽墙的唯一办法：草稿先猜、目标一次验证多行、接受前缀。从测接受率到草稿树的负结果，这一阶段的方法论就是“先测量后动工”。"},
+ "3b":{t:"③b DFlash2（步骤 24–27）", d:"换一个更强的草稿：块扩散模型一次前向出 7 个 token。也第一次遇到“草稿训练语料的偏置”——中文散文上它不行。"},
+ "3c":{t:"③c Marlin（步骤 28）", d:"一步封顶：M 平坦的 int4 GEMM 让“读一遍权重、算 8 行”完全兑现，验证 7 个草稿只花 1.13 个原始步。"},
+ 4:{t:"④ 收尾与终测（步骤 29–35）", d:"量化质量追平、对手账目修正、同日同机终测、服务化、可复现性。做工程收尾和做实验一样认真。"},
+};
+
+/* ============ 渲染 ============ */
+const gmap = {}; CONCEPTS.forEach(c => gmap[c.id] = c);
+const stepsBox = document.getElementById("steps");
+let lastPhase = null, html = "";
+for (const s of STEPS) {
+  if (s.phase !== lastPhase) {
+    const p = PHASES[s.phase];
+    html += '<h2 class="phase" id="phase' + s.phase + '">' + p.t + '</h2><p class="phase-desc">' + p.d + '</p>';
+    lastPhase = s.phase;
+  }
+  const nums = s.nums.map(x =>
+    '<span class="num' + (x[2] ? " hl" : "") + (x[3] ? " a800" : "") + '">' + x[0] + '：<b>' + x[1] + '</b></span>').join("");
+  const chips = s.concepts.map(id =>
+    '<a class="chip" href="#c-' + id + '">' + gmap[id].title.split("（")[0] + '</a>').join("");
+  html += '<div class="step" id="step' + s.n + '">'
+    + '<h3><span class="n">' + s.n + '</span>' + s.title + '</h3>'
+    + '<div class="meta">2026-' + s.date + '</div>'
+    + '<p>' + s.what + '</p>'
+    + '<div class="why">' + s.why + '</div>'
+    + '<div class="nums">' + nums + '</div>'
+    + '<div class="chips">' + chips + '</div>'
+    + '</div>';
+}
+stepsBox.innerHTML = html;
+
+document.getElementById("glossary").innerHTML = CONCEPTS.map(c =>
+  '<div class="concept" id="c-' + c.id + '"><h3>' + c.title + '</h3>' + c.body
+  + '<br><a class="back" href="#steps">↑ 回到路线图</a></div>').join("");
+
+/* ============ SVG 进度图 ============ */
+const raw = [[2,3.2],[3,36],[4,68.4],[6,83.2],[7,99.5],[8,102.5],[11,102.2],[30,97.4]];
+const spec = [[13,172],[14,183],[20,186],[25,178],[26,220],[27,217],[28,224]];
+const a800 = [[2.9,81],[28.5,139]];
+const W=920,H=360,pad={l:52,r:26,t:22,b:40};
+const xmax=36, ymax=250;
+const X=n=>pad.l+(n-1)/(xmax-1)*(W-pad.l-pad.r);
+const Y=v=>H-pad.b-(v/ymax)*(H-pad.t-pad.b);
+const svg=document.getElementById("chart");
+let g='<rect x="'+pad.l+'" y="'+pad.t+'" width="'+(W-pad.l-pad.r)+'" height="'+(H-pad.t-pad.b)+'" fill="#fff" stroke="#e1e0d9"/>';
+for(let v=50;v<=250;v+=50) g+='<line x1="'+pad.l+'" x2="'+(W-pad.r)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#eeede6"/><text x="'+(pad.l-8)+'" y="'+(Y(v)+4)+'" font-size="11" fill="#898781" text-anchor="end">'+v+'</text>';
+[1,5,11,23,27,28,35].forEach(n=>g+='<text x="'+X(n)+'" y="'+(H-pad.b+16)+'" font-size="11" fill="#898781" text-anchor="middle">'+n+'</text>');
+g+='<text x="'+((pad.l+W-pad.r)/2)+'" y="'+(H-6)+'" font-size="12" fill="#52514e" text-anchor="middle">开发步骤编号 →</text>';
+g+='<text x="14" y="'+((pad.t+H-pad.b)/2)+'" font-size="12" fill="#52514e" text-anchor="middle" transform="rotate(-90 14 '+((pad.t+H-pad.b)/2)+')">tok/s</text>';
+const path=pts=>pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1)).join(" ");
+g+='<path d="'+path(raw)+'" fill="none" stroke="#898781" stroke-width="2"/>';
+g+='<path d="'+path(spec)+'" fill="none" stroke="#2a78d6" stroke-width="2.5"/>';
+raw.forEach(p=>g+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4" fill="#898781" stroke="#fff" stroke-width="1.5"/>');
+spec.forEach(p=>g+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4.5" fill="#2a78d6" stroke="#fff" stroke-width="1.5"/>');
+a800.forEach(p=>g+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="none" stroke="#eb6834" stroke-width="2.5"/>'
+  +'<text x="'+X(p[0])+'" y="'+(Y(p[1])-11)+'" font-size="12" font-weight="700" fill="#eb6834" text-anchor="middle">'+p[1]+'</text>');
+g+='<text x="'+X(35)+'" y="'+(Y(224)-12)+'" font-size="12" font-weight="700" fill="#2a78d6" text-anchor="end">224</text>';
+g+='<text x="'+(X(11)+8)+'" y="'+(Y(102)-10)+'" font-size="11" fill="#52514e">82% 带宽墙 · raw 天花板</text>';
+svg.innerHTML=g;
+</script>
+</body>
+</html>
