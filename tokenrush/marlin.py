@@ -29,7 +29,10 @@ def ext():
         from torch.utils.cpp_extension import load
         build = os.path.join(_HERE, "csrc", "build")
         os.makedirs(build, exist_ok=True)
-        os.environ.setdefault("TORCH_CUDA_ARCH_LIST", "12.0")
+        # build for the card in front of us (8.0 on A800, 12.0 on RTX 5090, ...)
+        if torch.cuda.is_available():
+            cap = torch.cuda.get_device_capability()
+            os.environ.setdefault("TORCH_CUDA_ARCH_LIST", f"{cap[0]}.{cap[1]}")
         _ext = load(name="marlin_bf16", sources=[os.path.join(_HERE, "csrc", "marlin_bf16.cpp"),
                                                  os.path.join(_HERE, "csrc", "marlin_bf16.cu")],
                     extra_cuda_cflags=["-O3"], build_directory=build, verbose=False)

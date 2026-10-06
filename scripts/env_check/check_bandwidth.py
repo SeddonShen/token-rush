@@ -2,7 +2,7 @@
 """Measure achievable HBM bandwidth and turn it into the decode roofline.
 
 Everything in the project's speed argument is anchored to one number: the read
-bandwidth this card actually sustains, not the 1792 GB/s on the spec sheet.
+bandwidth this card actually sustains, not the number on the spec sheet.
 Weight streaming at bs=1 is a pure read, so `read` below is the number to use.
 """
 import time
@@ -10,7 +10,7 @@ import torch
 import triton
 import triton.language as tl
 
-SPEC_GBS = 1792.0          # RTX 5090 datasheet
+SPEC_GBS = 2039.0          # A800-SXM4-80GB datasheet (HBM2e); RTX 5090 was 1792
 TEXT_PARAMS = 26.896e9     # Qwen3.8-27B text path incl. lm_head, excl. vision+mtp
 
 

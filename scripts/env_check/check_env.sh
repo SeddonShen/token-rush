@@ -124,7 +124,8 @@ else
 __global__ void k(float* o) { o[threadIdx.x] = threadIdx.x; }
 int main() { float* d; cudaMalloc(&d, 512); k<<<1, 32>>>(d); cudaDeviceSynchronize(); }
 CU
-  nvcc -arch=sm_120 "$TMP/k.cu" -o "$TMP/k" 2>/dev/null
+  SM=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -1 | tr -d '.')
+  nvcc -arch=sm_${SM:-80} "$TMP/k.cu" -o "$TMP/k" 2>/dev/null
   out=$(ncu --metrics dram__bytes.sum "$TMP/k" 2>&1)
   if grep -q ERR_NVGPUCTRPERM <<<"$out"; then
     echo "RESULT: BLOCKED — ERR_NVGPUCTRPERM (host must set"

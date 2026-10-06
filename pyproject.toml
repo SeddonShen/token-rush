@@ -3,7 +3,7 @@ name = "tokenrush"
 version = "0.1.0"
 description = "Single-stream inference engine for Qwen3.8-27B on one RTX 5090"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.10"   # A800 box: system 3.10; no 3.11+ syntax in the tree
 dependencies = [
     "torch==2.14.0",
     "transformers>=5.16",
