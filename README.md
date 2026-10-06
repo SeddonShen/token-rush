@@ -5,6 +5,7 @@
   </picture>
   <h1>Token Rush</h1>
   <p><em>The fastest inference engine for Qwen3.8-27B on one RTX 5090 — built for one user, one card, one stream.</em></p>
+  <p><a href="README.md">English</a> | <a href="README_CN.md">简体中文</a></p>
 </div>
 
 ## What you get
