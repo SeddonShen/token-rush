@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Token Rush 推理优化课程 · 35 步 × 18 概念</title>
+<style>
+  :root {
+    --ink:#1a1a19; --ink2:#52514e; --muted:#898781;
+    --surface:#fcfcfb; --card:#fff; --line:#e1e0d9;
+    --accent:#2a78d6; --accent2:#eb6834; --green:#1baf7a; --purple:#7c5cbf;
+    --chipbg:#eef4fb; --chipborder:#c9dcf3; --soft:#f6f6f3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);line-height:1.85;font-size:16.5px;
+    font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px 90px}
+  a{color:var(--accent)}
+  code{background:#f0efe9;border-radius:5px;padding:1px 6px;font-size:14px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(252,252,251,.96);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);margin:0 -22px;padding:10px 22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .topbar a{font-size:14px;color:var(--ink2);text-decoration:none}
+  .topbar a:hover{color:var(--accent)}
+  .topbar .brand{font-weight:700;font-size:15px;color:var(--ink)}
+  .crumb{color:var(--muted);font-size:13.5px}
+  h1{font-size:32px;margin:44px 0 6px;letter-spacing:.5px}
+  .sub{color:var(--ink2);font-size:16.5px}
+  .cards4{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 20px;min-width:150px}
+  .stat .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:12.5px;color:var(--muted)}
+  .formula{margin-top:24px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);
+    border-radius:10px;padding:14px 20px}
+  h2.sec{font-size:24px;margin:52px 0 10px}
+  .phase-desc{color:var(--ink2);margin:0 0 14px;font-size:15px}
+  .steplist{display:flex;flex-direction:column;gap:10px}
+  .stepcard{display:flex;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:13px;
+    padding:15px 20px;text-decoration:none;color:var(--ink)}
+  .stepcard:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(42,120,214,.09)}
+  .stepcard .nn{flex:0 0 34px;height:34px;border-radius:9px;background:var(--ink);color:var(--surface);
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+  .stepcard .tt{font-size:16.5px;font-weight:600}
+  .stepcard .tg{font-size:13.5px;color:var(--ink2);margin-top:1px}
+  .stepcard .badge{margin-left:auto;flex:0 0 auto;align-self:center;font-size:11.5px;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:1px 9px;white-space:nowrap}
+  .stepcard .badge.major{color:#fff;background:var(--accent);border-color:var(--accent)}
+  .conceptgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .conceptcard{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);
+    border-radius:11px;padding:12px 16px;text-decoration:none;color:var(--ink)}
+  .conceptcard:hover{border-color:var(--green)}
+  .conceptcard .t{font-weight:600;font-size:15.5px}
+  .conceptcard .o{font-size:12.8px;color:var(--ink2);margin-top:2px}
+  /* 详情页 */
+  .lesson{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px 34px 22px;margin-top:26px}
+  .lesson .kicker{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .lesson .kicker .ph{color:var(--accent);font-weight:600}
+  .lesson h1{font-size:28px;margin:6px 0 2px}
+  .lesson .tagline{font-size:16.5px;color:var(--ink2);margin:4px 0 14px}
+  .lesson h4{margin:26px 0 8px;font-size:17px;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .lesson h4 .bar{display:inline-block;width:5px;height:18px;border-radius:3px;background:var(--accent)}
+  .lesson.concept h4 .bar{background:var(--green)}
+  .lesson p{margin:9px 0;color:#2b2a28}
+  .nums{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 6px}
+  .num{border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:14px;background:#fbfaf7}
+  .num b{font-variant-numeric:tabular-nums}
+  .num.hl{border-color:var(--green);background:#f0faf6}
+  .analogy{background:#f4f8f4;border:1px solid #d8e8d8;border-radius:12px;padding:14px 18px;margin:14px 0}
+  .analogy .lab{font-size:12.5px;color:var(--green);font-weight:700;letter-spacing:1px}
+  .worked{background:#f7f5ef;border:1px solid #e8e2d2;border-radius:12px;padding:14px 18px;margin:14px 0}
+  .worked .lab{font-size:12.5px;color:#9a7d2e;font-weight:700;letter-spacing:1px}
+  .mis{background:#faf1ee;border:1px solid #eed6cd;border-radius:12px;padding:14px 18px;margin:10px 0}
+  .mis .lab{font-size:12.5px;color:#c05b3a;font-weight:700;letter-spacing:1px}
+  .mis p{margin:6px 0}
+  .a800box{background:#fdf4ef;border:1px solid #f0d8c8;border-radius:12px;padding:14px 18px;margin:14px 0}
+  .a800box .lab{font-size:12.5px;color:var(--accent2);font-weight:700;letter-spacing:1px}
+  .exercise{background:#f2f0fa;border:1px solid #ddd6ee;border-radius:12px;padding:14px 18px;margin:14px 0}
+  .exercise .lab{font-size:12.5px;color:var(--purple);font-weight:700;letter-spacing:1px}
+  .chips{margin:10px 0 0}
+  .chip{display:inline-block;font-size:12.5px;color:var(--accent);background:var(--chipbg);border:1px solid var(--chipborder);
+    border-radius:999px;padding:1px 11px;margin:2px 4px 2px 0;text-decoration:none}
+  .chip:hover{background:var(--accent);color:#fff}
+  .chip.green{color:var(--green);background:#effaf5;border-color:#cdeede}
+  .chip.green:hover{background:var(--green);color:#fff}
+  .prenext{display:flex;justify-content:space-between;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .prenext a{flex:1 1 200px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 16px;
+    text-decoration:none;color:var(--ink);font-size:14px}
+  .prenext a:hover{border-color:var(--accent)}
+  .prenext .dir{color:var(--muted);font-size:12px}
+  .diagram{margin:16px 0;border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px}
+  .diagram svg{width:100%;height:auto;display:block}
+  .diagram .cap{font-size:12.5px;color:var(--muted);text-align:center;padding:4px 6px 2px}
+  .pathbox{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 22px;margin:14px 0}
+  .pathbox ol{margin:8px 0 2px;padding-left:22px}
+  .pathbox li{margin:5px 0}
+  #chart{width:100%;height:auto;margin-top:6px}
+  .legend{font-size:13px;color:var(--ink2);display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .ring{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:2.5px solid var(--accent2)}
+  footer{margin-top:64px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:18px}
+  .prereq{font-size:13.5px;color:var(--muted);margin:2px 0 0}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar">
+  <span class="brand">Token Rush 课程</span>
+  <a href="#/">课程列表</a>
+  <a href="#/concepts">概念词典</a>
+  <a href="#/path">学习路径</a>
+  <span class="crumb" id="crumb"></span>
+</div>
+<div id="app"></div>
+<footer>
+  内容来自仓库 docs/progress.md（作者日志）的逐课改写，数字均为原日志实测；A800 数字为本机实测（docs/a800.md）。
+  页面零依赖可离线；数据在 concepts.js / steps.js，图解在页内 SVG 函数。上一版总览仍在 <a href="../steps_zh.html">steps_zh.html</a>。
+</footer>
+</div>
+
+<script src="concepts.js"></script>
+<script src="steps.js"></script>
+<script>
+/* ================= 图解库：参数化 SVG ================= */
+const D = {};
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+D.wall = () => {
+  let s = svgOpen(860,300);
+  s += box(30,40,180,90,"#1a1a19","#fff","权重 int4","14.3 GB");
+  s += box(30,150,180,90,"#898781","#fff","KV 缓存","随上下文涨");
+  s += arrow(230,90,330,90,"每步全量读","#2a78d6");
+  s += box(340,55,150,70,"#2a78d6","#fff","计算单元","");
+  s += text(520,80,"tok/s 上限 = 带宽 ÷ 每步字节","#1a1a19",15,700);
+  s += text(520,110,"A800：1902 ÷ 14.3 ≈ 133 tok/s","#eb6834",14,700);
+  s += text(520,138,"5090：1701 ÷ 13.7 ≈ 124 tok/s","#52514e",13,400);
+  s += text(30,272,"显存带宽是墙：batch=1 时算力闲置，速度由“每步必须读的字节”决定","#898781",13,400);
+  return s + "</svg>";
+};
+D.launch = () => {
+  let s = svgOpen(860,320);
+  s += text(20,32,"eager（每次发射一个 kernel）","#1a1a19",14,700);
+  for (let i=0;i<14;i++) s += box(20+i*38,44,30,26,"#c9c8c1","#1a1a19","","");
+  s += text(20+i0(14)*38+12,62,"…×2500","#898781",12,400);
+  s += bar(20,84,700,24,"#f2e8e4","CPU 发射 30 ms");
+  s += bar(20,116,320,24,"#e6ecf6","GPU 实算 18 ms（其余时间空等）");
+  s += text(20,178,"CUDA graph（录成一张图，一条 replay）","#1a1a19",14,700);
+  s += bar(20,190,26,24,"#2a78d6","replay");
+  s += bar(20,222,340,24,"#e6ecf6","GPU 连续执行 14.6 ms");
+  s += text(20,282,"10 ms 的步预算里砍掉 9 ms：36 → 68 tok/s","#eb6834",13,700);
+  return s + "</svg>";
+};
+D.fusion = () => {
+  let s = svgOpen(860,250);
+  for (let i=0;i<13;i++) s += box(20+i*40,30,32,34,"#d8d7cf","#52514e","","");
+  s += text(20+i0(13)*40+14,52,"…×26","#898781",12,400);
+  s += text(20,92,"一个 GDN 层 = 26 个小 kernel：每次发射 ~10 µs，中间结果写回显存再读回","#52514e",13,400);
+  s += arrow(400,110,400,140,"","#2a78d6");
+  s += box(330,150,140,56,"#1baf7a","#fff","1 个融合 kernel","");
+  s += text(20,232,"26 → 1：发射消失、中间数据留在寄存器。GDN 链 4.4 ms → 0.31 ms","#eb6834",13,700);
+  return s + "</svg>";
+};
+D.spec = () => {
+  let s = svgOpen(860,360);
+  s += text(20,30,"① 草稿模型先猜 3 个（读的字节很少）","#1a1a19",14,700);
+  s += box(20,42,150,40,"#f6f6f3","#1a1a19","已确认：今天天气很","");
+  const drafts=[["d1 好","#eef4fb"],["d2 ，","#eef4fb"],["d3 阳","#eef4fb"]];
+  drafts.forEach((d,i)=>s+=box(190+i*90,42,80,40,d[1],"#1a1a19",d[0].slice(3),""));
+  s += text(20,124,"② 目标模型一次前向验证 4 个位置（读一遍权重，M=4）","#1a1a19",14,700);
+  s += box(20,136,150,40,"#f6f6f3","#1a1a19","目标 argmax：","","好 ， 光…");
+  s += box(190,136,80,40,"#e9f7f0","#1baf7a","好 ✓","");
+  s += box(280,136,80,40,"#e9f7f0","#1baf7a","， ✓","");
+  s += box(370,136,80,40,"#faece8","#c05b3a","阳 ✗","");
+  s += box(460,136,90,40,"#f4f0fa","#7c5cbf","光 =白拿","");
+  s += text(20,218,"③ 接受前缀 n=2，白拿第 3 个：这一步产出 3 个 token（读一遍权重）","#1a1a19",14,700);
+  s += box(20,232,410,40,"#e9f7f0","#1baf7a","提交：好 ， 光","");
+  s += text(20,308,"速度 ≈ raw × 接受率 ÷ 验证倍率：101 × 3.08 ÷ 1.39 ≈ 224 tok/s","#eb6834",13,700);
+  s += text(20,336,"输出与不用投机逐 token 相同（贪心）/ 分布相同（采样）——猜错只损失速度","#898781",13,400);
+  return s + "</svg>";
+};
+D.verify = () => {
+  let s = svgOpen(860,300);
+  s += text(20,30,"天真：8 行 = 读 8 遍权重 = 8 × 14.3 GB","#c05b3a",14,700);
+  for (let i=0;i<8;i++) s += bar(20,42+i*24,60,18,"#f2e8e4","行"+(i+1));
+  for (let i=0;i<8;i++) s += arrow(90,51+i*24,150,51+i*24,"","#c05b3a");
+  s += box(160,42,120,190,"#1a1a19","#fff","权重矩阵","");
+  s += text(20,268,"M 行 kernel / Marlin：读 1 遍 = 14.3 GB，8 行一起算","#1baf7a",14,700);
+  for (let i=0;i<8;i++) s += bar(440,42+i*24,60,18,"#e9f7f0","行"+(i+1));
+  s += arrow(510,135,570,135,"","#1baf7a");
+  s += box(580,80,120,110,"#1baf7a","#fff","一遍流式读","M=16 与 M=1 同价");
+  s += arrow(710,135,770,135,"","#1baf7a");
+  s += text(20,296,"这就是“验证 7 个草稿只花 1.13 步”的硬件基础","#eb6834",13,700);
+  return s + "</svg>";
+};
+D.quant = () => {
+  let s = svgOpen(860,270);
+  s += text(20,30,"bf16：每权重 16 bit → 26.9B 参数 = 53.8 GB（A800 也勉强）","#1a1a19",14,700);
+  for (let i=0;i<16;i++) s += box(20+i*20,42,16,36,"#c9c8c1","#52514e","","");
+  s += text(20,106,"int4 g128：每 128 个权重一组，4 bit 码 + 一对 bf16 scale/min","#1a1a19",14,700);
+  for (let i=0;i<4;i++) s += box(20+i*20,118,16,36,"#2a78d6","#fff","","");
+  s += box(110,118,26,36,"#1baf7a","#fff","s","");
+  s += box(140,118,26,36,"#9a7d2e","#fff","m","");
+  s += text(190,142,"重建：w = q × s + m（q∈[-8,7]）","#52514e",13,400);
+  s += text(20,196,"体积：53.8 GB → 14.3 GB；墙上限：35 → 133 tok/s（A800）","#eb6834",14,700);
+  s += text(20,228,"质量账：RTN 的 KL 0.055 → GPTQ+MSE 0.023；GSM8K 97.0% vs bf16 96.0%","#52514e",13,400);
+  return s + "</svg>";
+};
+D.kv = () => {
+  let s = svgOpen(860,280);
+  s += text(20,30,"每 token 留下的 K/V：16 个注意力层 × 4 组 × 256 维 × 2(K,V)","#1a1a19",14,700);
+  const ctx=[["1k",65],["32k",210],["200k",660]];
+  ctx.forEach((c,i)=>{
+    s += text(60+i*250,60,c[0]+" 上下文","#52514e",12.5,400);
+    s += bar(20,68+i*66,c[1],26,"#c9dcf3","bf16: "+fmt((c[0]==="1k"?64:c[0]==="32k"?2048:12800))+" MB");
+    s += bar(20,98+i*66,c[1]/2,22,"#f0d8c8","fp8: 一半");
+  });
+  s += text(20,262,"decode 每步都要把整个 KV 读一遍：长上下文的成本 = 容量 + 带宽，两头都是它","#898781",13,400);
+  return s + "</svg>";
+};
+D.splitk = () => {
+  let s = svgOpen(860,300);
+  s += text(20,30,"一条 K/V 序列只让 1 个线程块扫 → 一百多个 SM 闲置","#1a1a19",14,700);
+  s += bar(20,42,600,24,"#e6e5de","线程块 0 独扫全部 K");
+  s += text(20,110,"split：切成 32 段并行，各出一份部分结果，再小合并一次","#1a1a19",14,700);
+  const cols=["#2a78d6","#1baf7a","#eb6834","#7c5cbf"];
+  for (let i=0;i<6;i++) s += bar(20+i*102,122,94,26,cols[i%4],"段"+(i+1));
+  s += text(20,186,"（图示 6 段；实际 32 段 × 每层 4 组 × 16 层在流水里）","#898781",12.5,400);
+  s += text(20,226,"num_stages 2→3：更多块“在飞行中” → 67%→92% 墙（第 22 步，一个常数）","#eb6834",13,700);
+  return s + "</svg>";
+};
+D.gdn = () => {
+  let s = svgOpen(860,300);
+  s += text(20,30,"attention 层（16 层）：KV 随上下文线性增长","#1a1a19",14,700);
+  for (let i=0;i<3;i++){ for(let j=0;j<=i*3+2;j++) s+=box(20+j*22,42+i*26,18,22,"#c9dcf3","#52514e","",""); }
+  s += text(20+i0(3)*0+160,110,"上下文越长，读得越多","#898781",12.5,400);
+  s += text(460,30,"GDN 层（48 层）：一页固定大小的状态","#1a1a19",14,700);
+  s += box(460,42,120,64,"#1baf7a","#fff","状态 S","恒定 ~12 MB");
+  s += arrow(600,74,680,74,"每步 delta 更新","#1baf7a");
+  s += box(690,42,110,64,"#e9f7f0","#1baf7a","S′","");
+  s += text(20,180,"长上下文性能 = 16 层的线性账 + 48 层的常数账（这就是“占墙比随上下文反升”的原因）","#1a1a19",13.5,700);
+  s += text(20,212,"代价：状态必须逐 token 串行更新 → 验证 M 行要在 kernel 里循环走 M 次（快照槽方案见第 13 课）","#52514e",13,400);
+  return s + "</svg>";
+};
+D.marlin = () => {
+  let s = svgOpen(860,300);
+  s += text(20,30,"差的设计：先反量化再算（每块固定开销，M 越大越亏）","#c05b3a",14,700);
+  s += bar(20,42,150,26,"#f2e8e4","搬块"); s += bar(180,42,150,26,"#faece8","反量化"); s += bar(340,42,150,26,"#f2e8e4","算 mma");
+  s += text(20,106,"Marlin：4 级流水——搬下一块的同时，用位技巧在寄存器里解码并算当前块","#1baf7a",14,700);
+  const lanes=["搬运 cp.async","解码 lop3","mma.sync"];
+  for (let l=0;l<3;l++){
+    s += text(20,132+l*44,lanes[l],"#52514e",12.5,400);
+    for (let k=0;k<4;k++) s += bar(150+k*150,124+l*44,138,26,l===0?"#c9dcf3":l===1?"#cdeede":"#f0d8c8","块"+(k+1));
+  }
+  s += text(20,268,"反量化与访存完全重叠 → 读到的每个字节立刻被用掉：M=16 与 M=1 同带宽","#eb6834",13,700);
+  return s + "</svg>";
+};
+
+/* SVG 小工具 */
+function svgOpen(w,h){ return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg">'; }
+function i0(n){ return n; }
+function box(x,y,w,h,fill,color,t1,t2){
+  return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="7" fill="'+fill+'" stroke="#d8d7cf"/>'
+   + (t1?'<text x="'+(x+w/2)+'" y="'+(y+h/2+(t2?-2:5))+'" font-size="13" font-weight="600" fill="'+color+'" text-anchor="middle">'+t1+'</text>':"")
+   + (t2?'<text x="'+(x+w/2)+'" y="'+(y+h/2+15)+'" font-size="11.5" fill="'+color+'" text-anchor="middle">'+t2+'</text>':"");
+}
+function bar(x,y,w,h,fill,label){
+  if (w<=0) w=1;
+  return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="5" fill="'+fill+'" stroke="#d8d7cf"/>'
+   + (label?'<text x="'+(x+8)+'" y="'+(y+h/2+5)+'" font-size="12" fill="#52514e">'+label+'</text>':"");
+}
+function arrow(x1,y1,x2,y2,label,color){
+  return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+color+'" stroke-width="2" marker-end="url(#ah)"/>'
+   + (label?'<text x="'+(x2+8)+'" y="'+(y2-8)+'" font-size="12" fill="'+color+'">'+label+'</text>':"");
+}
+function text(x,y,t,color,size,weight){
+  return '<text x="'+x+'" y="'+y+'" font-size="'+(size||13)+'" font-weight="'+(weight||400)+'" fill="'+(color||"#1a1a19")+'">'+t+'</text>';
+}
+function fmt(n){ return n>=1000 ? (n/1000).toFixed(1)+" GB" : n+" MB"; }
+const DEFS = '<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2a78d6"/></marker></defs>';
+const dg = (fn,cap) => '<div class="diagram">'+DEFS+D[fn]()+'<div class="cap">'+cap+'</div></div>';
+
+/* 概念 ↔ 图解 */
+const CONCEPT_DIAG = {wall:"wall",bytes:"wall",quant:"quant",gemv:"verify",launch:"launch",fusion:"fusion",
+  kv:"kv",flashdec:"splitk",gdn:"gdn",spec:"spec",mtp:"spec",dflash:"spec",marlin:"marlin",
+  l2:"splitk",draftvocab:"spec",verify:"verify",gate:"spec",measure:"launch"};
+/* 步骤 ↔ 图解 */
+const STEP_DIAG = {1:"wall",2:"quant",3:"launch",4:"launch",6:"fusion",7:"splitk",8:"splitk",9:"kv",
+  12:"spec",13:"verify",14:"spec",16:"spec",17:"kv",22:"splitk",24:"spec",25:"verify",26:"fusion",
+  27:"spec",28:"marlin",29:"spec",30:"quant",34:"gdn"};
+const STEP_DIAG_CAP = {wall:"带宽墙：每步全量读的物理图景",quant:"int4 量化：体积与质量两头记账",launch:"CUDA graph 前后的时间线",
+  fusion:"融合：26 个 kernel → 1 个",splitk:"split-K：切段并行喂饱 SM",kv:"KV 缓存：随上下文增长的字节账",
+  spec:"投机解码全流程（含具体 token 例子）",verify:"M 行算术：读一遍权重算 8 行",marlin:"Marlin 流水线：解码与搬运重叠",gdn:"attention 的线性账 vs GDN 的常数账"};
+
+/* ================= 路由与渲染 ================= */
+const gmap = {}; CONCEPTS.forEach(c=>gmap[c.id]=c);
+const byId = {}; STEPS.forEach(s=>byId[s.n]=s);
+const app = document.getElementById("app");
+const crumb = document.getElementById("crumb");
+
+function esc2(s){ return s; }  // 数据自己负责合法 HTML
+
+function stepCard(s){
+  const sizeName = {major:"完整课", mid:"标准课", minor:"小步"}[s.size||"mid"];
+  return '<a class="stepcard" href="#/step/'+s.n+'">'
+   + '<span class="nn">'+s.n+'</span><span><span class="tt">'+s.title+'</span>'
+   + '<div class="tg">'+s.tagline+'</div></span>'
+   + '<span class="badge '+(s.size==="major"?"major":"")+'">'+sizeName+'</span></a>';
+}
+function conceptCard(c){
+  return '<a class="conceptcard" href="#/concept/'+c.id+'"><div class="t">'+c.title+'</div><div class="o">'+c.oneLiner+'</div></a>';
+}
+
+function pageHome(){
+  crumb.textContent = "";
+  let h = '<h1>Token Rush 推理优化课程</h1>'
+   + '<p class="sub">一台 RTX 5090，把 Qwen3.8-27B 的单流解码从 3.2 tok/s 做到 224 tok/s。这里是全部 35 个开发步骤和 18 个核心概念的完整课程——每步点进去是一门课，每个概念点进去从类比讲到数字。我们正在 A800 上重走这条路，橙色的数字是我们的进度。</p>'
+   + '<div class="cards4">'
+   + '<div class="stat"><div class="v">35 + 18</div><div class="k">步骤课 + 概念课</div></div>'
+   + '<div class="stat"><div class="v">3.2 → 224</div><div class="k">tok/s 的全程</div></div>'
+   + '<div class="stat"><div class="v">81 → 139</div><div class="k">A800 当前 raw / 投机（未调参）</div></div>'
+   + '<div class="stat"><div class="v">1902</div><div class="k">A800 实测带宽墙 GB/s</div></div>'
+   + '</div>'
+   + '<div class="formula">先记住唯一的公式：<code>tok/s ≈ 实测显存带宽 ÷ 每步要读的字节</code>。全部 35 步只做两件事：少读字节（量化），或一次读字节多出几个 token（投机解码）。<br>推荐从 <a href="#/concept/wall">带宽墙</a> → <a href="#/concept/bytes">每步字节数</a> → <a href="#/concept/spec">投机解码</a> 三门概念课开始，再回来看步骤。</div>'
+   + '<svg id="chart" viewBox="0 0 920 360" xmlns="http://www.w3.org/2000/svg"></svg>'
+   + '<div class="legend"><span><span class="dot" style="background:#898781"></span>raw</span>'
+   + '<span><span class="dot" style="background:#2a78d6"></span>投机 · 英文散文</span>'
+   + '<span><span class="ring"></span>A800 当前位置（未调参）</span></div>';
+  let lastPhase = null;
+  for (const s of STEPS){
+    if (s.phase !== lastPhase){ h += '<h2 class="sec" id="ph'+s.phase+'">'+PHASES[s.phase].t+'</h2><p class="phase-desc">'+PHASES[s.phase].d+'</p><div class="steplist">'; h += ''; lastPhase = s.phase; }
+    h += stepCard(s);
+  }
+  h += '</div>';
+  h += '<h2 class="sec" id="concepts">概念词典（每门都是完整课）</h2><p class="phase-desc">按第一次出现的大致顺序。步骤课里点概念标签也会到这里的对应课。</p><div class="conceptgrid">'
+   + CONCEPTS.map(conceptCard).join("") + '</div>';
+  app.innerHTML = h;
+  drawChart();
+}
+function drawChart(){
+  const raw=[[2,3.2],[3,36],[4,68.4],[6,83.2],[7,99.5],[8,102.5],[11,102.2],[30,97.4]];
+  const spec=[[13,172],[14,183],[20,186],[25,178],[26,220],[27,217],[28,224]];
+  const a800=[[2.9,81],[28.5,139]];
+  const W=920,H=360,pad={l:52,r:26,t:22,b:40},xm=36,ym=250;
+  const X=n=>pad.l+(n-1)/(xm-1)*(W-pad.l-pad.r), Y=v=>H-pad.b-(v/ym)*(H-pad.t-pad.b);
+  let g='<rect x="'+pad.l+'" y="'+pad.t+'" width="'+(W-pad.l-pad.r)+'" height="'+(H-pad.t-pad.b)+'" fill="#fff" stroke="#e1e0d9"/>';
+  for(let v=50;v<=250;v+=50)g+='<line x1="'+pad.l+'" x2="'+(W-pad.r)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#eeede6"/><text x="'+(pad.l-8)+'" y="'+(Y(v)+4)+'" font-size="11" fill="#898781" text-anchor="end">'+v+'</text>';
+  [1,5,11,23,27,28,35].forEach(n=>g+='<text x="'+X(n)+'" y="'+(H-pad.b+16)+'" font-size="11" fill="#898781" text-anchor="middle">'+n+'</text>');
+  g+='<text x="'+((pad.l+W-pad.r)/2)+'" y="'+(H-6)+'" font-size="12" fill="#52514e" text-anchor="middle">开发步骤编号 →</text>';
+  const path=pts=>pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1)).join(" ");
+  g+='<path d="'+path(raw)+'" fill="none" stroke="#898781" stroke-width="2"/><path d="'+path(spec)+'" fill="none" stroke="#2a78d6" stroke-width="2.5"/>';
+  raw.forEach(p=>g+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4" fill="#898781" stroke="#fff" stroke-width="1.5"/>');
+  spec.forEach(p=>g+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4.5" fill="#2a78d6" stroke="#fff" stroke-width="1.5"/>');
+  a800.forEach(p=>g+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="none" stroke="#eb6834" stroke-width="2.5"/><text x="'+X(p[0])+'" y="'+(Y(p[1])-11)+'" font-size="12" font-weight="700" fill="#eb6834" text-anchor="middle">'+p[1]+'</text>');
+  const el=document.getElementById("chart"); if(el) el.innerHTML=g;
+}
+
+function pageStep(n){
+  const s = byId[n];
+  if (!s){ location.hash = "#/"; return; }
+  crumb.innerHTML = '<a href="#/">课程列表</a> / 第 '+n+' 课';
+  const prev = byId[n-1], next = byId[n+1];
+  let h = '<div class="lesson">'
+   + '<div class="kicker"><span class="ph">'+PHASES[s.phase].t+'</span><span>'+s.date+'</span>'
+   + '<span class="badge">'+({major:"完整课",mid:"标准课",minor:"小步"}[s.size||"mid"])+'</span></div>'
+   + '<h1>'+s.n+'. '+s.title+'</h1><div class="tagline">'+s.tagline+'</div>'
+   + '<h4><span class="bar"></span>这一步做了什么</h4>'
+   + s.body.map(p=>'<p>'+p+'</p>').join("");
+  if (STEP_DIAG[n]) h += dg(STEP_DIAG[n], STEP_DIAG_CAP[STEP_DIAG[n]]);
+  h += '<h4><span class="bar"></span>为什么有效（数字账）</h4>' + s.why.map(p=>'<p>'+p+'</p>').join("");
+  h += '<div class="nums">' + s.numbers.map(x=>'<span class="num'+(x[2]?' hl':'')+'">'+x[0]+'：<b>'+x[1]+'</b></span>').join("") + '</div>';
+  if (s.a800 && s.a800.length) h += '<div class="a800box"><div class="lab">在 A800 上（我们的机器）</div>'+s.a800.map(p=>'<p>'+p+'</p>').join("")+'</div>';
+  if (s.exercise) h += '<div class="exercise"><div class="lab">动手 / 思考</div><p>'+s.exercise+'</p></div>';
+  h += '<h4><span class="bar"></span>本课概念（点击进概念课）</h4><div class="chips">'
+   + s.concepts.map(id=>'<a class="chip green" href="#/concept/'+id+'">'+gmap[id].title.split("（")[0]+'</a>').join("")
+   + '</div><div class="prenext">'
+   + (prev?'<a href="#/step/'+prev.n+'"><span class="dir">← 上一课</span><br>'+prev.n+'. '+prev.title+'</a>':'<a href="#/"><span class="dir">←</span><br>课程列表</a>')
+   + (next?'<a href="#/step/'+next.n+'" style="text-align:right"><span class="dir">下一课 →</span><br>'+next.n+'. '+next.title+'</a>':'<a href="#/concepts" style="text-align:right"><span class="dir">→</span><br>概念词典</a>')
+   + '</div></div>';
+  app.innerHTML = h;
+  window.scrollTo(0,0);
+}
+
+function pageConcept(id){
+  const c = gmap[id];
+  if (!c){ location.hash = "#/"; return; }
+  crumb.innerHTML = '<a href="#/concepts">概念词典</a> / '+c.title.split("（")[0];
+  const prereq = (CONCEPT_PREREQ[id]||[]).map(p=>gmap[p]).filter(Boolean);
+  let h = '<div class="lesson concept">'
+   + '<div class="kicker"><span class="ph" style="color:var(--green)">概念课</span></div>'
+   + '<h1>'+c.title+'</h1><div class="tagline">'+c.oneLiner+'</div>';
+  if (prereq.length) h += '<p class="prereq">先修：'+prereq.map(p=>'<a class="chip green" href="#/concept/'+p.id+'">'+p.title.split("（")[0]+'</a>').join(" ")+'</p>';
+  h += '<div class="analogy"><div class="lab">类比</div><p>'+c.analogy.img+'</p><p style="font-size:14px;color:var(--muted)">'+c.analogy.note+'</p></div>';
+  if (CONCEPT_DIAG[id]) h += dg(CONCEPT_DIAG[id], c.title+" 的图解");
+  h += c.sections.map(sec=>'<h4><span class="bar"></span>'+sec[0]+'</h4><p>'+sec[1]+'</p>').join("");
+  if (c.worked) h += '<div class="worked"><div class="lab">用真实数字算一遍</div>'+c.worked.map(p=>'<p>'+p+'</p>').join("")+'</div>';
+  if (c.misconceptions) h += '<div class="mis"><div class="lab">常见误解</div>'+c.misconceptions.map(m=>'<p><b>'+m[0]+'</b> —— '+m[1]+'</p>').join("")+'</div>';
+  if (c.related && c.related.length) h += '<h4><span class="bar"></span>延伸阅读</h4><div class="chips">'
+   + c.related.map(r=>'<a class="chip" href="#/concept/'+r+'">'+(gmap[r]?gmap[r].title.split("（")[0]:r)+'</a>').join("")
+   + (c.id==="spec"?'<a class="chip" href="#/step/12">第 12 课：接受率实测</a><a class="chip" href="#/step/13">第 13 课：验证步</a>':"")
+   + (c.id==="wall"?'<a class="chip" href="#/step/1">第 1 课：立墙</a>':"")
+   + (c.id==="marlin"?'<a class="chip" href="#/step/28">第 28 课：Marlin 移植</a>':"")
+   + '</div>';
+  h += '<div class="prenext"><a href="#/concepts"><span class="dir">←</span><br>概念词典</a><a href="#/" style="text-align:right"><span class="dir">→</span><br>课程列表</a></div></div>';
+  app.innerHTML = h;
+  window.scrollTo(0,0);
+}
+
+function pageConcepts(){
+  crumb.textContent = "";
+  let h = '<h1>概念词典</h1><p class="sub">18 门概念课，每门：类比 → 分层讲解 → 真实数字算例 → 常见误解。这是理解 35 步的钥匙串。</p>';
+  h += '<div class="conceptgrid">'+CONCEPTS.map(conceptCard).join("")+'</div>';
+  app.innerHTML = h; window.scrollTo(0,0);
+}
+
+function pagePath(){
+  crumb.textContent = "";
+  let h = '<h1>学习路径建议</h1>'
+   + '<div class="pathbox"><b>第一周：把物理图景立起来（只读概念课 + 三个步骤课）</b><ol>'
+   + '<li>概念课：<a href="#/concept/wall">带宽墙</a>、<a href="#/concept/bytes">每步字节数</a>——记住那一个公式</li>'
+   + '<li>步骤课：<a href="#/step/1">第 1 课</a>（立墙）、<a href="#/step/2">第 2 课</a>（为什么慢得离谱）、<a href="#/step/4">第 4 课</a>（CUDA graph）</li>'
+   + '<li>在 A800 上跑一次 check_bandwidth.py，得到你自己的墙</li></ol></div>'
+   + '<div class="pathbox"><b>第二周：kernel 的世界（阶段二）</b><ol>'
+   + '<li>概念课：<a href="#/concept/launch">启动开销</a> → <a href="#/concept/fusion">融合</a> → <a href="#/concept/gemv">GEMV/M 行</a> → <a href="#/concept/flashdec">flash decoding</a> → <a href="#/concept/l2">L2 陷阱</a></li>'
+   + '<li>步骤课：第 3、6、7、8、11 课；作业：L2-proof 扫描（第 11 课的 A800 栏）</li></ol></div>'
+   + '<div class="pathbox"><b>第三周：投机的世界（阶段三，本项目的高潮）</b><ol>'
+   + '<li>概念课：<a href="#/concept/spec">投机解码</a> → <a href="#/concept/verify">验证步</a> → <a href="#/concept/mtp">MTP</a> → <a href="#/concept/dflash">DFlash2</a> → <a href="#/concept/marlin">Marlin</a></li>'
+   + '<li>步骤课：12、13、14、23（负结果！）、24、28 课</li>'
+   + '<li>作业：复跑 mtp_accept.py / dflash_accept.py，接受率应与作者一致（与卡无关）</li></ol></div>'
+   + '<div class="pathbox"><b>第四周以后：A800 重调（我们的主线）</b><ol>'
+   + '<li>每课的“在 A800 上”栏就是作业清单：split-K 段数、num_stages、BV、Marlin 的 L2 evict 提示（sm_80 合法！）</li>'
+   + '<li>毕业考：第 32 课的纪律——同日重锚墙、复测 raw/投机/上下文曲线，写进 docs/a800.md</li></ol></div>';
+  app.innerHTML = h; window.scrollTo(0,0);
+}
+
+function route(){
+  const h = location.hash || "#/";
+  if (h.startsWith("#/step/")) pageStep(parseInt(h.split("/")[2],10));
+  else if (h.startsWith("#/concept/")) pageConcept(h.split("/")[2]);
+  else if (h === "#/concepts") pageConcepts();
+  else if (h === "#/path") pagePath();
+  else pageHome();
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
