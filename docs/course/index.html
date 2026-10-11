@@ -115,6 +115,11 @@
   .box.a800b{border-left:5px solid var(--orange);background:#f9f1e8} .box.a800b .lab{color:var(--orange)}
   .box.exercise{border-left:5px solid var(--purple);background:#f4f2f9} .box.exercise .lab{color:var(--purple)}
   .box.refs{border-left:5px solid var(--blue);background:#eef2f7} .box.refs .lab{color:var(--blue)}
+  .box.plain{border-left:5px solid var(--ink);background:#f2f0e6} .box.plain .lab{color:var(--ink)}
+  .box.bgx{border-left:5px solid var(--muted);background:#f4f3ec} .box.bgx .lab{color:var(--muted)}
+  a.term{color:inherit;text-decoration:none;border-bottom:1.5px dashed var(--blue);padding-bottom:1px}
+  a.term:hover{color:var(--blue);border-bottom-style:solid}
+  .num .note{display:block;font-size:12px;color:var(--muted);margin-top:1px}
   .chips{margin:10px 0 0}
   .chip{display:inline-block;font-size:12.5px;color:var(--blue);background:#eef2f7;border:1px solid #c8d6e5;
     border-radius:3px;padding:2px 11px;margin:3px 6px 3px 0;text-decoration:none}
@@ -332,6 +337,33 @@ const STEP_DIAG_CAP = {wall:"带宽墙：每步全量读的物理图景",quant:"
   fusion:"融合：26 个 kernel → 1 个",splitk:"split-K：切段并行喂饱 SM",kv:"KV 缓存：随上下文增长的字节账",
   spec:"投机解码全流程（具体 token 例子）",verify:"M 行算术：读一遍权重算 8 行",marlin:"Marlin 流水线：解码与搬运重叠",gdn:"attention 的线性账 vs GDN 的常数账"};
 
+/* ================= 术语自动链接：正文术语第一次出现时链去概念课 ================= */
+const TERMMAP = [
+ ["投机解码","spec"],["CUDA graph","launch"],["回放带","launch"],["KV 缓存","kv"],["带宽墙","wall"],
+ ["天花板","wall"],["量化","quant"],["递归层","gdn"],["Marlin","marlin"],["矩阵乘","gemv"],
+ ["DFlash2","dflash"],["MTP","mtp"],["差分测试","gate"],["体检","gate"],["词表","draftvocab"],["融合","fusion"],
+ ["流水线","flashdec"],["猜中率","spec"],["L2","l2"],
+];
+function linkTerms(html, selfId){
+  let out = html;
+  const used = new Set();
+  for (const [term, id] of TERMMAP){
+    if (id === selfId || used.has(id)) continue;
+    const idx = out.indexOf(term);
+    if (idx < 0) continue;
+    const lastOpen = out.lastIndexOf("<", idx), lastClose = out.lastIndexOf(">", idx);
+    if (lastOpen > lastClose) continue;
+    const seg = out.slice(Math.max(0, idx - 120), idx);
+    if (seg.lastIndexOf("<a ") > seg.lastIndexOf("</a>")) continue;
+    out = out.slice(0, idx)
+       + '<a class="term" href="#/concept/' + id + '" title="点开看概念课">' + term + '</a>'
+       + out.slice(idx + term.length);
+    used.add(id);
+  }
+  return out;
+}
+const LT = (s, selfId) => linkTerms(s, selfId);
+
 /* ================= 路由与渲染 ================= */
 const gmap = {}; CONCEPTS.forEach(c=>gmap[c.id]=c);
 const byId = {}; STEPS.forEach(s=>byId[s.n]=s);
@@ -343,7 +375,7 @@ function stepCard(s){
   const sizeName = {major:"完整课", mid:"标准课", minor:"小步"}[s.size||"mid"];
   return '<a class="stepcard" href="#/step/'+s.n+'">'
    + '<span class="nn">'+String(s.n).padStart(2,"0")+'</span><span style="min-width:0">'
-   + '<span class="tt">'+s.title+'</span><div class="tg">'+s.tagline+'</div></span>'
+   + '<span class="tt">'+s.title+'</span><div class="tg">'+(s.plain||s.tagline||"")+'</div></span>'
    + '<span class="badge '+s.size+'">'+sizeName+'</span></a>';
 }
 function conceptCard(c){
@@ -377,6 +409,10 @@ function pageHome(){
    + '<div class="formula"><span class="f">tok/s ≈ 实测显存带宽 ÷ 每步要读的字节</span><br>'
    + '全部 35 步只做两件事：<b>少读字节</b>（量化）或<b>一次读字节多出几个 token</b>（投机解码）。'
    + '新来的话，从 <a href="#/concept/wall">带宽墙</a> → <a href="#/concept/bytes">每步字节数</a> → <a href="#/concept/spec">投机解码</a> 三门概念课开始，或看 <a href="#/path">四周学习路径</a>。</div>'
+   + '<div class="box plain" style="margin-top:18px;max-width:860px"><div class="lab">怎么读这套课</div>'
+   + '<p>① 每课开头有<b>一句话</b>（不含任何术语）和<b>读前须知</b>——看这两块决定要不要往下读。'
+   + '② 正文里<span style="border-bottom:1.5px dashed var(--blue)">带虚线下划线的词</span>都可以点，点开是这门概念的白话课；不懂就点，不用忍着。'
+   + '③ 每个数字后面都跟了一句“这数字什么意思”。不需要记住数字，需要记住的是数字之间的关系。</p></div>'
    + '</div></div>'
    + '<div class="frame">'
    + '<div id="chartbox"><svg id="chart" viewBox="0 0 1100 380" xmlns="http://www.w3.org/2000/svg"></svg>'
@@ -432,14 +468,16 @@ function pageStep(n){
    + '<div class="head"><div class="wm">'+String(s.n).padStart(2,"0")+'</div>'
    + '<div class="kicker"><span class="ph">'+PHASES[s.phase].t.replace(/^[①②③④]\s*/,"PHASE · ")+'</span>'
    + '<span>2026-'+s.date+'</span><span class="badge">'+({major:"完整课",mid:"标准课",minor:"小步"}[s.size||"mid"])+'</span></div>'
-   + '<h1>'+s.title+'</h1><div class="tagline">'+s.tagline+'</div></div>'
+   + '<h1>'+s.title+'</h1></div>'
    + '<div class="body">'
-   + h4("这一步做了什么") + s.body.map(p=>'<p>'+p+'</p>').join("");
+   + '<div class="box plain"><div class="lab">一句话</div><p style="font-size:17px">'+s.plain+'</p></div>'
+   + (s.bg?'<div class="box bgx"><div class="lab">读这一课之前，你只需要知道</div><p>'+LT(s.bg)+'</p></div>':"")
+   + h4("做了什么") + s.body.map(p=>'<p>'+LT(p)+'</p>').join("");
   if (STEP_DIAG[n]) h += dg(STEP_DIAG[n], STEP_DIAG_CAP[STEP_DIAG[n]]);
-  h += h4("为什么有效（数字账）") + s.why.map(p=>'<p>'+p+'</p>').join("");
-  h += '<div class="nums">' + s.numbers.map(x=>'<span class="num'+(x[2]?' hl':'')+'">'+x[0]+'：<b>'+x[1]+'</b></span>').join("") + '</div>';
-  if (s.a800 && s.a800.length) h += '<div class="box a800b"><div class="lab">在 A800 上（我们的机器）</div>'+s.a800.map(p=>'<p>'+p+'</p>').join("")+'</div>';
-  if (s.exercise) h += '<div class="box exercise"><div class="lab">动手 / 思考</div><p>'+s.exercise+'</p></div>';
+  h += h4("结果，以及为什么") + s.why.map(p=>'<p>'+LT(p)+'</p>').join("");
+  h += '<div class="nums">' + s.numbers.map(x=>'<span class="num">'+x[0]+'：<b>'+x[1]+'</b>'+(x[2]?'<span class="note">'+x[2]+'</span>':'')+'</span>').join("") + '</div>';
+  if (s.a800 && s.a800.length) h += '<div class="box a800b"><div class="lab">在 A800 上（我们的机器）</div>'+s.a800.map(p=>'<p>'+LT(p)+'</p>').join("")+'</div>';
+  if (s.exercise) h += '<div class="box exercise"><div class="lab">动手 / 思考</div><p>'+LT(s.exercise)+'</p></div>';
   h += h4("本课概念") + '<div class="chips">'
    + s.concepts.map(id=>'<a class="chip green" href="#/concept/'+id+'">'+gmap[id].title.split("（")[0]+'</a>').join("") + '</div>';
   h += '<div class="prenext">'
@@ -465,9 +503,10 @@ function pageConcept(id){
    + '<div class="body">'
    + '<div class="box analogy"><div class="lab">类比</div><p>'+c.analogy.img+'</p><p style="font-size:14px;color:var(--muted)">'+c.analogy.note+'</p></div>';
   if (CONCEPT_DIAG[id]) h += dg(CONCEPT_DIAG[id], c.title+" 的图解");
-  h += c.sections.map(sec=>h4(sec[0])+'<p>'+sec[1]+'</p>').join("");
-  if (c.worked) h += '<div class="box worked"><div class="lab">用真实数字算一遍</div>'+c.worked.map(p=>'<p>'+p+'</p>').join("")+'</div>';
-  if (c.misconceptions) h += '<div class="box mis"><div class="lab">常见误解</div>'+c.misconceptions.map(m=>'<p><b>'+m[0]+'</b> —— '+m[1]+'</p>').join("")+'</div>';
+  h += c.sections.map(sec=>h4(sec[0])+'<p>'+LT(sec[1], id)+'</p>').join("");
+  if (c.worked) h += '<div class="box worked"><div class="lab">用真实数字算一遍</div>'+c.worked.map(p=>'<p>'+LT(p, id)+'</p>').join("")+'</div>';
+  if (c.misconceptions) h += '<div class="box mis"><div class="lab">常见误解</div>'+c.misconceptions.map(m=>
+    m.length >= 2 ? '<p><b>'+m[0]+'</b> —— '+LT(m[1], id)+'</p>' : '<p>'+LT(m[0], id)+'</p>').join("")+'</div>';
   h += refsBox(id);
   if (c.related && c.related.length) h += h4("延伸阅读") + '<div class="chips">'
    + c.related.map(r=>'<a class="chip" href="#/concept/'+r+'">'+(gmap[r]?gmap[r].title.split("（")[0]:r)+'</a>').join("")
